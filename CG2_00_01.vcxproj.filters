@@ -153,6 +153,9 @@
     <ClCompile Include="ParticleEmitter.cpp">
       <Filter>ソース ファイル\engine\3d</Filter>
     </ClCompile>
+    <ClCompile Include="Boss.cpp">
+      <Filter>ソース ファイル\application</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -250,6 +253,9 @@
     </ClInclude>
     <ClInclude Include="ParticleEmitter.h">
       <Filter>ヘッダー ファイル\engine\3d</Filter>
+    </ClInclude>
+    <ClInclude Include="Boss.h">
+      <Filter>ヘッダー ファイル\application</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
