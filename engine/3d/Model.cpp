@@ -4,7 +4,6 @@
 #include <sstream>
 #include <cassert>
 #include "TextureManager.h"
-#include <filesystem>
 
 using namespace std;
 using namespace MathFunction;
@@ -39,8 +38,7 @@ void Model::Draw() {
 	// マテリアルCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	// SRVのDescriptorTableの先頭を設定。2はrootParameter[2]である。
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureFilePath);
-	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
+	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureFilePath));
 	// 描画！（フォローコール）
 	commandList->DrawInstanced(UINT(modelData.verticles.size()), 1, 0, 0);
 }
@@ -93,7 +91,6 @@ Model::ModelData Model::LoadObjFile(const string& directoryPath, const string& f
 		if (identifier == "v") {
 			Vector4 position;
 			s >> position.x >> position.y >> position.z;
-			position.x *= -1.0f;
 			position.w = 1.0f;
 			positions.push_back(position);
 		}
