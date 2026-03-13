@@ -165,6 +165,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="externals\imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="externals\imgui\imgui_tables.cpp" />
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="engine\math\MathFunction.cpp" />
     <ClCompile Include="engine\2d\Sprite.cpp" />
@@ -205,6 +206,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\math\Vector4.h" />
     <ClInclude Include="engine\2d\TextureManager.h" />
     <ClInclude Include="engine\3d\Object3dCommon.h" />
+    <ClInclude Include="GameScene.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelCommon.h" />
     <ClInclude Include="ModelManager.h" />
