@@ -1,5 +1,6 @@
 #pragma once
 #include "DirectXBase.h"
+#include <queue>
 
 // SRV管理
 class SrvManager {
