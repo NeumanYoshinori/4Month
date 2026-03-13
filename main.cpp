@@ -359,6 +359,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// コマンドリストを生成する
 	ComPtr<ID3D12GraphicsCommandList> commandList = dxBase->GetCommandList();
 
+	// ==========================================
+	// カメラの初期化
+	// ==========================================
+
+
+	// ★ 追加：カメラの座標と回転を保存しておく変数を作る
+	Vector3 cameraPos = { -15.0f, 15.0f, -15.0f };
+	Vector3 cameraRot = { 0.5f, 0.78f, 0.0f };
+
+	// 変数を使って初期セット
+	camera->SetTranslate(cameraPos);
+	camera->SetRotate(cameraRot);
+
 	GameScene* gameScene = new GameScene();
 	gameScene->Initialize(object3dCommon, camera);
 
@@ -385,6 +398,43 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (input->ReleaseKey(DIK_0)) {
 			OutputDebugStringA("Hit 0\n");
 		}
+
+		// キー入力の更新
+		input->Update();
+
+		// ==========================================
+		// ★ フリーカメラの操作処理（ここから）
+		// ==========================================
+		// スピード調整（速すぎる/遅すぎる場合はこの数字を変えます）
+		float moveSpeed = 0.2f;
+		float rotSpeed = 0.02f;
+
+		// --- 矢印キーで Translate (移動) ---
+		// ※エンジンによって「押しっぱなし」の関数名が PushKey か PressKey か異なるので、
+		// もし赤い波線が出たら input->PressKey などに変えてみてください！
+		if (input->PushKey(DIK_UP)) { cameraPos.z += moveSpeed; } // 前へ
+		if (input->PushKey(DIK_DOWN)) { cameraPos.z -= moveSpeed; } // 後ろへ
+		if (input->PushKey(DIK_LEFT)) { cameraPos.x -= moveSpeed; } // 左へ
+		if (input->PushKey(DIK_RIGHT)) { cameraPos.x += moveSpeed; } // 右へ
+		if (input->PushKey(DIK_SPACE)) { cameraPos.y -= moveSpeed; } // 左へ
+		if (input->PushKey(DIK_LSHIFT)) { cameraPos.y += moveSpeed; } // 右へ
+
+
+		// --- WASDキーで Rotate (回転) ---
+		if (input->PushKey(DIK_W)) { cameraRot.x -= rotSpeed; } // 上を向く
+		if (input->PushKey(DIK_S)) { cameraRot.x += rotSpeed; } // 下を向く
+		if (input->PushKey(DIK_A)) { cameraRot.y -= rotSpeed; } // 左を向く
+		if (input->PushKey(DIK_D)) { cameraRot.y += rotSpeed; } // 右を向く
+		if (input->PushKey(DIK_Q)) { cameraRot.z -= rotSpeed; } // 左を向く
+		if (input->PushKey(DIK_E)) { cameraRot.z += rotSpeed; } // 右を向く
+
+
+		// 変更した座標と回転をカメラにセット！
+		camera->SetTranslate(cameraPos);
+		camera->SetRotate(cameraRot);
+		// ==========================================
+		// ★ フリーカメラの操作処理（ここまで）
+		// ==========================================
 
 		// カメラの更新
 		camera->Update();
