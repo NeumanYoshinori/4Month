@@ -292,12 +292,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// 初期化済みの3Dオブジェクトにモデルを紐づける
 	field->SetModel("field.obj");
+	field->SetRotate({ 85.0f, 0.0f, 0.0f });
 	field->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
 	// カメラの初期化
 	Camera* camera = new Camera();
 	camera->SetRotate({ 0.3f, 0.0f, 0.0f });
-	camera->SetTranslate({ 0.0f, 4.0f, -10.0f });
+	camera->SetTranslate({ 0.0f, 10.0f, -30.0f });
 	field->SetCamera(camera);
 
 	Transform uvTransformSprite{
@@ -335,6 +336,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// コマンドリストを生成する
 	ComPtr<ID3D12GraphicsCommandList> commandList = dxBase->GetCommandList();
 
+	Vector3 rotation = { 0.0f, 0.0f, 0.0f };
+
 	// ウィンドウの×ボタンが押されるまでループ
 	while (true) {
 		// Windowsのメッセージ処理
@@ -362,8 +365,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// カメラの更新
 		camera->Update();
 
+		//rotation.x += 0.01f;
 		// フィールドの更新
 		field->Update();
+		//field->SetRotate(rotation);
 
 		// 開発用UIの処理
 		//ImGui::ShowDemoWindow();
