@@ -123,6 +123,7 @@ Model::ModelData Model::LoadObjFile(const string& directoryPath, const string& f
 				Vector4 position = positions[elementIndices[0] - 1];
 				Vector2 texcoord = texcoords[elementIndices[1] - 1];
 				Vector3 normal = normals[elementIndices[2] - 1];
+				VertexData vertex = { position, texcoord, normal };
 				triangle[faceVertex] = { position, texcoord, normal };
 			}
 			// 頂点を逆順で登録することで、周り順を逆にする

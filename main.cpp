@@ -264,16 +264,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	textureManager->LoadTexture("resources/uvChecker.png");
 	textureManager->LoadTexture("resources/monsterBall.png");
 
-	string filePath[2] = { "resources/uvChecker.png", "resources/monsterBall.png" };
-
 	SpriteCommon* spriteCommon = nullptr;
 	// スプライト共通部の初期化
 	spriteCommon = new SpriteCommon();
 	spriteCommon->Initialize(dxBase);
-
-	// スプライトの初期化
-	Sprite* sprite = new Sprite();
-	sprite->Initialize(spriteCommon, "resources/uvChecker.png");
 
 	// モデルマネージャー
 	ModelManager* modelManager = ModelManager::GetInstance();
@@ -291,26 +285,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// .objファイルからモデルを読み込む
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
+	ModelManager::GetInstance()->LoadModel("field.obj");
 
 	// 3dオブジェクトの初期化
-	Object3d* object3d[2];
-	for (uint32_t i = 0; i < 2; i++) {
-		object3d[i] = new Object3d();
-		object3d[i]->Initialize(object3dCommon);
-	}
+	Object3d* field = new Object3d();
+	field->Initialize(object3dCommon);
 
 	// 初期化済みの3Dオブジェクトにモデルを紐づける
-	object3d[0]->SetModel("plane.obj");
-	object3d[1]->SetModel("axis.obj");
-	object3d[0]->SetTranslate({ 0.0f, 0.0f, 0.0f });
-	object3d[1]->SetTranslate({ 2.0f, 2.0f, 2.0f });
+	field->SetModel("field.obj");
+	field->SetRotate({ 85.0f, 0.0f, 0.0f });
+	field->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
 	// カメラの初期化
 	Camera* camera = new Camera();
 	camera->SetRotate({ 0.3f, 0.0f, 0.0f });
-	camera->SetTranslate({ 0.0f, 4.0f, -10.0f });
-	object3d[0]->SetCamera(camera);
-	object3d[1]->SetCamera(camera);
+	camera->SetTranslate({ 0.0f, 10.0f, -30.0f });
+	field->SetCamera(camera);
 
 	// player
 	Player* player = new Player();
@@ -365,6 +355,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// コマンドリストを生成する
 	ComPtr<ID3D12GraphicsCommandList> commandList = dxBase->GetCommandList();
 
+	Vector3 rotation = { 0.0f, 0.0f, 0.0f };
+
 	// ウィンドウの×ボタンが押されるまでループ
 	while (true) {
 		// Windowsのメッセージ処理
@@ -393,21 +385,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// カメラの更新
 		camera->Update();
 
-		rotate[0].x += 0.01f;
-		rotate[1].z += 0.01f;
-
-		for (uint32_t i = 0; i < 2; i++) {
-			// 3Dオブジェクトの更新
-			object3d[i]->Update();
-			object3d[i]->SetRotate(rotate[i]);
-		}
-
-		particleManager->Update();
-
-		particleEmitter->Update();
-
-		// スプライトの更新
-		sprite->Update();
+		//rotation.x += 0.01f;
+		// フィールドの更新
+		field->Update();
+		//field->SetRotate(rotation);
 
 		// 開発用UIの処理
 		//ImGui::ShowDemoWindow();
@@ -431,12 +412,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		player->Draw();
 
 		//particleManager->Draw();
+		// 3Dオブジェクトの描画
+		field->Draw();
 
 		// 共通描画設定
 		spriteCommon->DrawSetting();
-
-		// スプライトの描画
-		//sprite->Draw();
 
 		// 実際のcommandListのImGuiの描画コマンドを積む
 		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
@@ -462,16 +442,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// キー入力処理解放
 	delete input;
 
-	//// スプライトの解放
-	delete sprite;
-
 	//// スプライト共通部の解放
 	delete spriteCommon;
 
-	for (uint32_t i = 0; i < 2; i++) {
-		// 3dオブジェクトの解放
-		delete object3d[i];
-	}
+	// フィールドの解放
+	delete field;
 
 	// playerの解放
 	delete player;
@@ -484,9 +459,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// 3Dモデルマネージャの終了
 	modelManager->Finalize();
-
-	// パーティクルマネージャの終了
-	particleManager->Finalize();
 
 	// SRVマネージャの解放
 	delete srvManager;
