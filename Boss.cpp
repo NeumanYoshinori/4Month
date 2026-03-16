@@ -78,6 +78,18 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     objectBody_->SetCamera(camera);
     objectLeftArm_->SetCamera(camera);
     objectRightArm_->SetCamera(camera);
+
+
+    // ==========================================
+    // 6. 衝撃波の準備
+    // ==========================================
+    ModelManager::GetInstance()->LoadModel("plane.obj");
+
+    shockwave_ = new Object3d();
+    shockwave_->Initialize(object3dCommon);
+    shockwave_->SetModel("plane.obj");
+    shockwave_->SetCamera(camera);
+
 }
 
 void Boss::Update() {
@@ -94,8 +106,14 @@ void Boss::Update() {
     // タイマーが120（約2秒）になったら、右腕が待機中の場合のみ発射！
     if (attackTimer_ >= 120 && rightPunchState_ == PunchState::kIdle) {
         rightPunchState_ = PunchState::kPunch;
-        attackTimer_ = 0; // ここでタイマーをリセットして、また左腕のターンへ
+      //  attackTimer_ = 0; // ここでタイマーをリセットして、また左腕のターンへ
     }
+    // ③ 180フレーム（約3秒）でジャンプ開始！
+    if (attackTimer_ >= 180 && !isJumping_) {
+        isJumping_ = true;
+        velocityY_ = 0.75f; // ★ ジャンプ力（上に向かって飛ぶスピード）
+    }
+
 
     // ==========================================
     // 2. 左腕の状態遷移（ロケットパンチの動き）
@@ -139,6 +157,38 @@ void Boss::Update() {
         break;
     }
 
+
+    // ==========================================
+    // ★ 追加：ジャンプと重力（着地）の物理演算
+    // ==========================================
+    if (isJumping_) {
+        // スピードの分だけ高さを変える
+        bossPos_.y += velocityY_;
+
+        // 重力をかける（毎フレーム少しずつ下向きの力を足す）
+        velocityY_ -= 0.05f;
+
+        // 着地判定（フィールドの高さ Y = 0.0f にぶつかったら）
+        if (bossPos_.y <= 0.0f) {
+            bossPos_.y = 0.0f;      // 地面にめり込まないようにピタッと止める
+            isJumping_ = false;     // ジャンプ終了
+            attackTimer_ = 0;       // タイマーをリセットして、また左パンチから繰り返す
+
+            // ⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎
+            
+            // ==========================================
+            // ★ 追加：着地した瞬間に衝撃波を発生させる！
+            // ==========================================
+            isShockwaveActive_ = true;
+            shockwaveScale_ = { 0.1f, 0.1f, 0.1f }; // 初期サイズは小さく
+
+            // ボスの足元にセット（地面と重なってチカチカするバグを防ぐため、Yを 0.01f だけ浮かせる）
+            shockwavePos_ = { bossPos_.x, 0.01f, bossPos_.z };
+
+            // ⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎
+        }
+    }
+
     // ==========================================
     // 4. 計算した結果を実際の3Dオブジェクトにセット
     // ==========================================
@@ -160,12 +210,17 @@ void Boss::Draw() {
     if (objectBody_) { objectBody_->Draw(); }
     if (objectLeftArm_) { objectLeftArm_->Draw(); }
     if (objectRightArm_) { objectRightArm_->Draw(); }
+
+    if (isShockwaveActive_ && shockwave_) {
+        shockwave_->Draw();
+    }
 }
 
 Boss::~Boss() {
     delete objectBody_;
     delete objectLeftArm_;
     delete objectRightArm_;
+    delete shockwave_;
 }
 
 //
