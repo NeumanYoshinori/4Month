@@ -526,6 +526,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	delete gameScene;
 
+	delete camera;
+
 	// テクスチャマネージャの終了
 	textureManager->Finalize();
 

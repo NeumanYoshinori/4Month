@@ -12,6 +12,8 @@ public:
     void Update();
     void Draw();
 
+    ~Boss();
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 

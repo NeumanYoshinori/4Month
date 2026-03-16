@@ -104,7 +104,7 @@ void Boss::Update() {
     case PunchState::kIdle:
         break; // 待機中は動かさない
     case PunchState::kPunch:
-        leftArmZ_ -= 0.2f; // 手前に飛ばす
+        leftArmZ_ -= 0.1f; // 手前に飛ばす
         if (leftArmZ_ < -6.0f) {
             leftPunchState_ = PunchState::kReturn; // 限界まで飛んだら戻る
         }
@@ -125,7 +125,7 @@ void Boss::Update() {
     case PunchState::kIdle:
         break; // 待機中は動かさない
     case PunchState::kPunch:
-        rightArmZ_ -= 0.2f;
+        rightArmZ_ -= 0.1f;
         if (rightArmZ_ < -6.0f) {
             rightPunchState_ = PunchState::kReturn;
         }
@@ -162,6 +162,11 @@ void Boss::Draw() {
     if (objectRightArm_) { objectRightArm_->Draw(); }
 }
 
+Boss::~Boss() {
+    delete objectBody_;
+    delete objectLeftArm_;
+    delete objectRightArm_;
+}
 
 //
 //次はボスの攻撃（ロケットパンチ）
