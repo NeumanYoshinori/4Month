@@ -83,11 +83,12 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // ==========================================
     // 6. 衝撃波の準備
     // ==========================================
-    ModelManager::GetInstance()->LoadModel("plane.obj");
+    ModelManager::GetInstance()->LoadModel("ring.obj");
 
     shockwave_ = new Object3d();
     shockwave_->Initialize(object3dCommon);
-    shockwave_->SetModel("plane.obj");
+    shockwave_->SetModel("ring.obj");
+    shockwave_->SetRotate({ 0.0f, 0.0f, 0.0f });
     shockwave_->SetCamera(camera);
 
 }
@@ -189,6 +190,24 @@ void Boss::Update() {
         }
     }
 
+    if (isShockwaveActive_) {
+        // 平面（X軸とZ軸）を急速に拡大させる
+        shockwaveScale_.x += 0.2f;
+        shockwaveScale_.z += 0.2f;
+
+        if (shockwaveScale_.x > 30.0f) {
+            isShockwaveActive_ = false;
+        }
+
+        // 座標と大きさをオブジェクトにセット
+        shockwave_->SetTranslate(shockwavePos_);
+        shockwave_->SetScale(shockwaveScale_);
+
+   
+
+        // 更新
+        shockwave_->Update();
+    }
     // ==========================================
     // 4. 計算した結果を実際の3Dオブジェクトにセット
     // ==========================================
