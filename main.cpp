@@ -365,8 +365,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	// ★ 追加：カメラの座標と回転を保存しておく変数を作る
-	Vector3 cameraPos = { -15.0f, 15.0f, -15.0f };
-	Vector3 cameraRot = { 0.5f, 0.78f, 0.0f };
+	Vector3 cameraPos = { 0.0f, 20.0f, -10.0f };
+
+	// ② カメラの角度：X軸を 1.57f（約90度）回して「真下」を見下ろす！
+	Vector3 cameraRot = { 0.78f, 0.0f, 0.0f };
 
 	// 変数を使って初期セット
 	camera->SetTranslate(cameraPos);
