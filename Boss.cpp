@@ -96,3 +96,8 @@ void Boss::Draw() {
     if (objectLeftArm_) { objectLeftArm_->Draw(); }
     if (objectRightArm_) { objectRightArm_->Draw(); }
 }
+
+
+//
+//次はボスの攻撃（ロケットパンチ）
+//
