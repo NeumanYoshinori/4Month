@@ -451,6 +451,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// playerの解放
 	delete player;
 
+	// カメラの解放
+	delete camera;
+
+	// パーティクルエミッターの解放
+	delete particleEmitter;
+
+	// パーティクルマネージャの終了
+	particleManager->Finalize();
+
 	// 3dオブジェクト共通部の解放
 	delete object3dCommon;
 
