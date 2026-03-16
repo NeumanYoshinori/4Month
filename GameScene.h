@@ -18,6 +18,8 @@ private:
     // ボスのインスタンス
     Boss* boss_ = nullptr;
 
+    Object3d* field_ = nullptr;
+
     // エンジン側で用意されている共通部品（すでにあるはずです）
     ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
