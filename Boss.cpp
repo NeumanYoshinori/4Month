@@ -49,13 +49,10 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
     // ② カメラから少し離れた位置（奥）に置く
     // 今カメラが Z: -10.0f にいるので、ボスを Z: 10.0f くらいに置くと全体が見えやすいです
-    Vector3 bossPos = { 0.0f, 0.0f, 10.0f };
-    objectBody_->SetTranslate(bossPos);
-
-    // 腕の位置も胴体に合わせて調整（※ボスのモデルの作り方によります）
-    // もし腕が胴体と同じ原点で作られているモデルなら、腕も同じ座標でOKです！
-    objectLeftArm_->SetTranslate(bossPos);
-    objectRightArm_->SetTranslate(bossPos);
+    Vector3 bossPos = { 0.0f,-1.57f, 10.0f };
+    objectBody_->SetTranslate(bossPos_);
+    objectLeftArm_->SetTranslate({ bossPos_.x - 2.0f, bossPos_.y, bossPos_.z });
+    objectRightArm_->SetTranslate({ bossPos_.x + 2.0f, bossPos_.y, bossPos_.z });
     // ==========================================
     // 5. 向き（回転）の設定
     // ==============================,============
@@ -63,17 +60,17 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // コマみたいに横を向かせたい（旋回させたい）場合は、真ん中の「Y」の値をいじります。
 
     // 例：180度回して反対を向かせる
-    Vector3 bossRotate = { 0.0f, 3.14f, 0.0f }; 
+    Vector3 bossRotate = { 0.0f, 1.57f, 0.0f }; 
     objectBody_->SetRotate(bossRotate);
     objectLeftArm_->SetRotate(bossRotate);
     objectRightArm_->SetRotate(bossRotate);
 
-    float armOffset = 0.5f;
+    float armOffset = 2.0f;
 
     // 左腕はマイナス方向、右腕はプラス方向にズラす
   // もし前後（胸と背中）に腕がいってしまった場合の書き方
-    Vector3 leftArmPos = { bossPos.x, bossPos.y, bossPos.z - armOffset };
-    Vector3 rightArmPos = { bossPos.x, bossPos.y, bossPos.z + armOffset };
+    Vector3 leftArmPos = { bossPos_.x - armOffset, bossPos_.y, bossPos_.z };
+    Vector3 rightArmPos = { bossPos_.x + armOffset, bossPos_.y, bossPos_.z };
 
     objectLeftArm_->SetTranslate(leftArmPos);
     objectRightArm_->SetTranslate(rightArmPos);
@@ -84,12 +81,80 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 }
 
 void Boss::Update() {
-    // 胴体と腕の行列更新
+    // ==========================================
+    // 1. タイマーによる発射命令
+    // ==========================================
+    attackTimer_++;
+
+    // タイマーが60（約1秒）になったら、左腕が待機中の場合のみ発射！
+    if (attackTimer_ == 60 && leftPunchState_ == PunchState::kIdle) {
+        leftPunchState_ = PunchState::kPunch;
+        
+    }
+    // タイマーが120（約2秒）になったら、右腕が待機中の場合のみ発射！
+    if (attackTimer_ >= 120 && rightPunchState_ == PunchState::kIdle) {
+        rightPunchState_ = PunchState::kPunch;
+        attackTimer_ = 0; // ここでタイマーをリセットして、また左腕のターンへ
+    }
+
+    // ==========================================
+    // 2. 左腕の状態遷移（ロケットパンチの動き）
+    // ==========================================
+    switch (leftPunchState_) {
+    case PunchState::kIdle:
+        break; // 待機中は動かさない
+    case PunchState::kPunch:
+        leftArmZ_ -= 0.2f; // 手前に飛ばす
+        if (leftArmZ_ < -6.0f) {
+            leftPunchState_ = PunchState::kReturn; // 限界まで飛んだら戻る
+        }
+        break;
+    case PunchState::kReturn:
+        leftArmZ_ += 0.2f; // 元の位置へ戻る
+        if (leftArmZ_ >= 0.0f) {
+            leftArmZ_ = 0.0f;
+            leftPunchState_ = PunchState::kIdle; // 戻りきったら待機状態へ
+        }
+        break;
+    }
+
+    // ==========================================
+    // 3. 右腕の状態遷移（ロケットパンチの動き）
+    // ==========================================
+    switch (rightPunchState_) {
+    case PunchState::kIdle:
+        break; // 待機中は動かさない
+    case PunchState::kPunch:
+        rightArmZ_ -= 0.2f;
+        if (rightArmZ_ < -6.0f) {
+            rightPunchState_ = PunchState::kReturn;
+        }
+        break;
+    case PunchState::kReturn:
+        rightArmZ_ += 0.2f;
+        if (rightArmZ_ >= 0.0f) {
+            rightArmZ_ = 0.0f;
+            rightPunchState_ = PunchState::kIdle;
+        }
+        break;
+    }
+
+    // ==========================================
+    // 4. 計算した結果を実際の3Dオブジェクトにセット
+    // ==========================================
+    float armOffset = 0.5f; // 脇への距離
+
+    objectBody_->SetTranslate(bossPos_);
+
+    // ★ 左腕も Z軸 に leftArmZ_ を足すように変更！
+    objectLeftArm_->SetTranslate({ bossPos_.x - armOffset, bossPos_.y, bossPos_.z + leftArmZ_ });
+    objectRightArm_->SetTranslate({ bossPos_.x + armOffset, bossPos_.y, bossPos_.z + rightArmZ_ });
+
+    // 行列更新
     objectBody_->Update();
     objectLeftArm_->Update();
     objectRightArm_->Update();
 }
-
 void Boss::Draw() {
     // 描画
     if (objectBody_) { objectBody_->Draw(); }
