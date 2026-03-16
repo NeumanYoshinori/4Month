@@ -26,6 +26,7 @@
 #include "SrvManager.h"
 #include "ParticleManager.h"
 #include "ParticleEmitter.h"
+#include "Player.h"
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxcompiler.lib")
@@ -311,6 +312,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	object3d[0]->SetCamera(camera);
 	object3d[1]->SetCamera(camera);
 
+	// player
+	Player* player = new Player();
+	player->Initialize(object3dCommon);
+	// playerにモデルを紐づける
+	player->SetModel("plane.obj");
+	// playerにカメラを紐づける
+	player->SetCamera(camera);
+
 	// パーティクルマネージャ
 	ParticleManager* particleManager = ParticleManager::GetInstance();
 	particleManager->Initialize(dxBase, srvManager, camera);
@@ -374,6 +383,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		// キー入力の更新
 		input->Update();
+		player->Update(input);
 
 		// 0キーを押したときコンソールにHit 0と表示する
 		if (input->ReleaseKey(DIK_0)) {
@@ -415,16 +425,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		for (uint32_t i = 0; i < 2; i++) {
 			// 3Dオブジェクトの描画
-			object3d[i]->Draw();
+			//object3d[i]->Draw();
 		}
 
-		particleManager->Draw();
+		player->Draw();
+
+		//particleManager->Draw();
 
 		// 共通描画設定
 		spriteCommon->DrawSetting();
 
 		// スプライトの描画
-		sprite->Draw();
+		//sprite->Draw();
 
 		// 実際のcommandListのImGuiの描画コマンドを積む
 		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
@@ -460,6 +472,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 3dオブジェクトの解放
 		delete object3d[i];
 	}
+
+	// playerの解放
+	delete player;
 
 	// 3dオブジェクト共通部の解放
 	delete object3dCommon;
