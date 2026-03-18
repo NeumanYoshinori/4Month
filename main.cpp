@@ -289,19 +289,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ModelManager::GetInstance()->LoadModel("field.obj");
 
 	// 3dオブジェクトの初期化
-	Object3d* field = new Object3d();
-	field->Initialize(object3dCommon);
+	//Object3d* field = new Object3d();
+	//field->Initialize(object3dCommon);
 
-	// 初期化済みの3Dオブジェクトにモデルを紐づける
-	field->SetModel("field.obj");
-	field->SetRotate({ 85.0f, 0.0f, 0.0f });
-	field->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	//// 初期化済みの3Dオブジェクトにモデルを紐づける
+	//field->SetModel("field.obj");
+	//field->SetRotate({ 85.0f, 0.0f, 0.0f });
+	//field->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
 	// カメラの初期化
 	Camera* camera = new Camera();
 	camera->SetRotate({ 0.3f, 0.0f, 0.0f });
 	camera->SetTranslate({ 0.0f, 10.0f, -30.0f });
-	field->SetCamera(camera);
+	//field->SetCamera(camera);
 
 	// player
 	Player* player = new Player();
@@ -459,7 +459,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete spriteCommon;
 
 	// フィールドの解放
-	delete field;
+//	delete field;
 
 	// playerの解放
 	delete player;

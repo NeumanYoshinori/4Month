@@ -47,7 +47,11 @@ void Player::Update(Input* input) {
 		}
 	}
 
-	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+	Vector3 drawPos = transform.translate;
+	drawPos.y += 1.0f; // 見た目だけ 1.0f 分（モデルの半分）上に持ち上げる
+
+	// ★ 修正：transform.translate の代わりに drawPos を使って行列を作る
+	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, drawPos);
 	Matrix4x4 worldViewProjectionMatrix;
 	if (camera_) {
 		const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();

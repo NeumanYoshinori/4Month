@@ -242,12 +242,11 @@ void Boss::Update() {
     // 4. 計算した結果を実際の3Dオブジェクトにセット
     // ==========================================
     float armOffset = 0.5f; // 脇への距離
+    float yOffset = 1.0f;   // ★ 追加：地面に埋まらないようにする「見た目の高さ」
 
-    objectBody_->SetTranslate(bossPos_);
-
-    // ★ 左腕も Z軸 に leftArmZ_ を足すように変更！
-    objectLeftArm_->SetTranslate({ bossPos_.x - armOffset, bossPos_.y, bossPos_.z + leftArmZ_ });
-    objectRightArm_->SetTranslate({ bossPos_.x + armOffset, bossPos_.y, bossPos_.z + rightArmZ_ });
+    objectBody_->SetTranslate({ bossPos_.x, bossPos_.y + yOffset, bossPos_.z });
+    objectLeftArm_->SetTranslate({ bossPos_.x - armOffset, bossPos_.y + yOffset, bossPos_.z + leftArmZ_ });
+    objectRightArm_->SetTranslate({ bossPos_.x + armOffset, bossPos_.y + yOffset, bossPos_.z + rightArmZ_ });
 
     // 行列更新
     objectBody_->Update();

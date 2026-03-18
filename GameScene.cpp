@@ -19,7 +19,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     field_->SetModel("field.obj");
 
     // チームメイトが設定していた角度と位置をそのままセット
-    field_->SetRotate({ 85.0f, 0.0f, 0.0f });
+    field_->SetRotate({ 3.14f, 0.0f, 0.0f });
     field_->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
     // カメラの紐付けも忘れずに！
