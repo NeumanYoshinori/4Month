@@ -83,13 +83,14 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // ==========================================
     // 6. 衝撃波の準備
     // ==========================================
-    ModelManager::GetInstance()->LoadModel("ring.obj");
+    // plane.obj や cube.obj に戻す！
+    ModelManager::GetInstance()->LoadModel("plane.obj");
 
     shockwave_ = new Object3d();
     shockwave_->Initialize(object3dCommon);
-    shockwave_->SetModel("ring.obj");
-    shockwave_->SetRotate({ 0.0f, 0.0f, 0.0f });
+    shockwave_->SetModel("plane.obj");
     shockwave_->SetCamera(camera);
+    // ※ 先ほど追加した shockwave_->SetRotate(...) は消して大丈夫です！
 
 }
 
@@ -97,23 +98,24 @@ void Boss::Update() {
     // ==========================================
     // 1. タイマーによる発射命令
     // ==========================================
-    attackTimer_++;
+    // ★ 修正：大技の最中（奥へ移動〜定位置に戻るまで）はタイマーを進めない！
+    if (!isMovingToEdge_ && !isJumping_ && !isShockwaveActive_ && !isReturningToCenter_) {
+        attackTimer_++;
+    }
 
-    // タイマーが60（約1秒）になったら、左腕が待機中の場合のみ発射！
+    // 左腕パンチ
     if (attackTimer_ == 60 && leftPunchState_ == PunchState::kIdle) {
         leftPunchState_ = PunchState::kPunch;
-        
     }
-    // タイマーが120（約2秒）になったら、右腕が待機中の場合のみ発射！
-    if (attackTimer_ >= 120 && rightPunchState_ == PunchState::kIdle) {
+    // 右腕パンチ（※念のため >= 120 ではなく == 120 にして事故を防ぎます）
+    if (attackTimer_ == 120 && rightPunchState_ == PunchState::kIdle) {
         rightPunchState_ = PunchState::kPunch;
-      //  attackTimer_ = 0; // ここでタイマーをリセットして、また左腕のターンへ
     }
     // ③ 180フレーム（約3秒）でジャンプ開始！
-    if (attackTimer_ >= 180 && !isJumping_) {
-        isJumping_ = true;
-        velocityY_ = 0.75f; // ★ ジャンプ力（上に向かって飛ぶスピード）
-    }
+    //if (attackTimer_ >= 180 && !isJumping_) {
+    //    isJumping_ = true;
+    //    velocityY_ = 0.75f; // ★ ジャンプ力（上に向かって飛ぶスピード）
+    //}
 
 
     // ==========================================
@@ -160,54 +162,82 @@ void Boss::Update() {
 
 
     // ==========================================
-    // ★ 追加：ジャンプと重力（着地）の物理演算
-    // ==========================================
-    if (isJumping_) {
-        // スピードの分だけ高さを変える
-        bossPos_.y += velocityY_;
+      // 3. 大技：移動 → ジャンプ → 衝撃波 のコンボ
+      // ==========================================
+      // ① 180フレームで「奥への移動」を開始！
+      // （※衝撃波がまだ画面に残っている間は、次の移動を始めないように待つ）
+    if (attackTimer_ >= 180 && !isMovingToEdge_ && !isJumping_ && !isShockwaveActive_) {
+        isMovingToEdge_ = true;
+    }
 
-        // 重力をかける（毎フレーム少しずつ下向きの力を足す）
+    // ② 奥の端へスーーッと移動する処理
+    if (isMovingToEdge_) {
+        bossPos_.z += 0.2f; // ボスを奥（Zのプラス方向）へ後退させる
+
+        // 画面の奥（例えば Z = 25.0f）に到達したら、移動をやめてジャンプ開始！
+        if (bossPos_.z >= 15.0f) {
+            bossPos_.z = 15.0f;
+            isMovingToEdge_ = false;
+
+            isJumping_ = true;
+            velocityY_ = 0.6f; // ジャンプ力
+        }
+    }
+
+    // ③ ジャンプと重力（着地）の処理
+    if (isJumping_) {
+        bossPos_.y += velocityY_;
         velocityY_ -= 0.05f;
 
-        // 着地判定（フィールドの高さ Y = 0.0f にぶつかったら）
+        // 着地判定
         if (bossPos_.y <= 0.0f) {
-            bossPos_.y = 0.0f;      // 地面にめり込まないようにピタッと止める
-            isJumping_ = false;     // ジャンプ終了
-            attackTimer_ = 0;       // タイマーをリセットして、また左パンチから繰り返す
+            bossPos_.y = 0.0f;
+            isJumping_ = false;
+            attackTimer_ = 0; // タイマーリセット（またパンチから始まる）
 
-            // ⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎⬇︎
-            
-            // ==========================================
-            // ★ 追加：着地した瞬間に衝撃波を発生させる！
-            // ==========================================
+            // ★着地した瞬間に、直線の衝撃波を発生させる！
             isShockwaveActive_ = true;
-            shockwaveScale_ = { 0.1f, 0.1f, 0.1f }; // 初期サイズは小さく
 
-            // ボスの足元にセット（地面と重なってチカチカするバグを防ぐため、Yを 0.01f だけ浮かせる）
+            // サイズ：横幅(X)をめちゃくちゃ広くして、画面全体を覆う「波」にする
+            shockwaveScale_ = { 20.0f, 0.1f, 2.0f };
+
+            // ボスの足元からスタート
             shockwavePos_ = { bossPos_.x, 0.01f, bossPos_.z };
-
-            // ⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎⬆︎
         }
     }
 
+    // ④ 直線衝撃波が「手前に迫ってくる」処理
     if (isShockwaveActive_) {
-        // 平面（X軸とZ軸）を急速に拡大させる
-        shockwaveScale_.x += 0.2f;
-        shockwaveScale_.z += 0.2f;
+        // ※ 拡大（Scale）はもうさせず、位置（Z座標）だけを手前に動かす！
+        shockwavePos_.z -= 0.1f; // 波が迫ってくるスピード
 
-        if (shockwaveScale_.x > 30.0f) {
+        // カメラの後ろ（例えば Z = -20.0f）まで波が通り過ぎたら消滅
+        if (shockwavePos_.z < -20.0f) {
             isShockwaveActive_ = false;
+
+            isReturningToCenter_ = true;
+            // ※お好みで、攻撃が終わったらボスを元の位置（Z=10.0f）に戻すなどの処理を入れても面白いです！
         }
 
-        // 座標と大きさをオブジェクトにセット
         shockwave_->SetTranslate(shockwavePos_);
         shockwave_->SetScale(shockwaveScale_);
-
-   
-
-        // 更新
+        shockwave_->SetRotate({ 0.0f, 0.0f, 0.0f }); // 寝かせず、そのまま使う
         shockwave_->Update();
     }
+
+    if (isReturningToCenter_) {
+        bossPos_.z -= 0.2f; // 奥から手前（Zのマイナス方向）へ移動して戻る
+
+        // 定位置（Z = 10.0f）に到着したら
+        if (bossPos_.z <= 10.0f) {
+            bossPos_.z = 10.0f;           // ピタッと止める
+            isReturningToCenter_ = false; // 戻り状態を終了
+
+            // ★ ここでタイマーをリセット！またパンチ攻撃から綺麗に再開します
+            attackTimer_ = 0;
+        }
+    }
+
     // ==========================================
     // 4. 計算した結果を実際の3Dオブジェクトにセット
     // ==========================================
@@ -224,6 +254,7 @@ void Boss::Update() {
     objectLeftArm_->Update();
     objectRightArm_->Update();
 }
+
 void Boss::Draw() {
     // 描画
     if (objectBody_) { objectBody_->Draw(); }
