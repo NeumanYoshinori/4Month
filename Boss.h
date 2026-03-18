@@ -18,6 +18,18 @@ public:
     Vector3 GetShockwavePos() const { return shockwavePos_; }
     Vector3 GetShockwaveScale() const { return shockwaveScale_; }
 
+    // ==========================================
+    // ★ 追加：GameSceneにロケットパンチの情報を教える窓口
+    // ==========================================
+    // パンチ中（待機状態じゃない）かどうか
+    bool IsLeftPunching() const { return leftPunchState_ != PunchState::kIdle; }
+    bool IsRightPunching() const { return rightPunchState_ != PunchState::kIdle; }
+
+    // 腕の現在のワールド座標（前回見た目を +1.0f 持ち上げたので、ここでも合わせます）
+    Vector3 GetLeftArmPos() const { return { bossPos_.x - 0.5f, bossPos_.y + 1.0f, bossPos_.z + leftArmZ_ }; }
+    Vector3 GetRightArmPos() const { return { bossPos_.x + 0.5f, bossPos_.y + 1.0f, bossPos_.z + rightArmZ_ }; }
+
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 

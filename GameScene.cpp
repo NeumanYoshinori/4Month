@@ -20,7 +20,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
     // チームメイトが設定していた角度と位置をそのままセット
     field_->SetRotate({ 3.14f, 0.0f, 0.0f });
-    field_->SetTranslate({ 0.0f, 0.0f, 0.0f });
+    field_->SetTranslate({ 0.0f, 0.0f, 5.0f });
 
     // カメラの紐付けも忘れずに！
     field_->SetCamera(camera);
@@ -62,6 +62,52 @@ void GameScene::Update(Player* player) {
             if (isHitZ && isHitY) {
                 // コンソールに文字を出す！
                 OutputDebugStringA("Hit Shockwave!!!\n");
+            }
+        }
+
+        // ==========================================
+        // ★ 追加：当たり判定（ロケットパンチ左腕 vs プレイヤー）
+        // ==========================================
+        if (boss_->IsLeftPunching()) {
+            Vector3 pPos = player->GetTranslate();
+            // プレイヤーの中心点を計算（足元 Y=0.0f から 1.0f 上げたお腹のあたり）
+            Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
+            Vector3 armPos = boss_->GetLeftArmPos(); // 腕の中心点
+
+            // X, Y, Z のそれぞれの距離の差を求める
+            float dx = pCenter.x - armPos.x;
+            float dy = pCenter.y - armPos.y;
+            float dz = pCenter.z - armPos.z;
+
+            // 3Dの距離を計算（三平方の定理：ルート(x^2 + y^2 + z^2)）
+            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+            // 当たり判定の大きさ（プレイヤーの半径 + 腕の半径）
+            // ※ 腕が大きければ、この数値を 2.0f などに増やします
+            float hitRadius = 1.5f;
+
+            if (distance < hitRadius) {
+                OutputDebugStringA("Hit Left Punch!!!\n");
+            }
+        }
+
+        // ==========================================
+        // ★ 追加：当たり判定（ロケットパンチ右腕 vs プレイヤー）
+        // ==========================================
+        if (boss_->IsRightPunching()) {
+            Vector3 pPos = player->GetTranslate();
+            Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
+            Vector3 armPos = boss_->GetRightArmPos();
+
+            float dx = pCenter.x - armPos.x;
+            float dy = pCenter.y - armPos.y;
+            float dz = pCenter.z - armPos.z;
+
+            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+            float hitRadius = 1.5f;
+
+            if (distance < hitRadius) {
+                OutputDebugStringA("Hit Right Punch!!!\n");
             }
         }
     }

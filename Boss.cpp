@@ -51,8 +51,8 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // 今カメラが Z: -10.0f にいるので、ボスを Z: 10.0f くらいに置くと全体が見えやすいです
     Vector3 bossPos = { 0.0f,-1.57f, 10.0f };
     objectBody_->SetTranslate(bossPos_);
-    objectLeftArm_->SetTranslate({ bossPos_.x - 2.0f, bossPos_.y, bossPos_.z });
-    objectRightArm_->SetTranslate({ bossPos_.x + 2.0f, bossPos_.y, bossPos_.z });
+    objectLeftArm_->SetTranslate({ bossPos_.x - 0.5f, bossPos_.y, bossPos_.z });
+    objectRightArm_->SetTranslate({ bossPos_.x + 0.5f, bossPos_.y, bossPos_.z });
     // ==========================================
     // 5. 向き（回転）の設定
     // ==============================,============
@@ -126,7 +126,7 @@ void Boss::Update() {
         break; // 待機中は動かさない
     case PunchState::kPunch:
         leftArmZ_ -= 0.1f; // 手前に飛ばす
-        if (leftArmZ_ < -6.0f) {
+        if (leftArmZ_ < -12.0f) {
             leftPunchState_ = PunchState::kReturn; // 限界まで飛んだら戻る
         }
         break;
@@ -147,7 +147,7 @@ void Boss::Update() {
         break; // 待機中は動かさない
     case PunchState::kPunch:
         rightArmZ_ -= 0.1f;
-        if (rightArmZ_ < -6.0f) {
+        if (rightArmZ_ < -12.0f) {
             rightPunchState_ = PunchState::kReturn;
         }
         break;
@@ -166,7 +166,7 @@ void Boss::Update() {
       // ==========================================
       // ① 180フレームで「奥への移動」を開始！
       // （※衝撃波がまだ画面に残っている間は、次の移動を始めないように待つ）
-    if (attackTimer_ >= 180 && !isMovingToEdge_ && !isJumping_ && !isShockwaveActive_) {
+    if (attackTimer_ >= 180 && leftPunchState_ == PunchState::kIdle && rightPunchState_ == PunchState::kIdle && !isMovingToEdge_ && !isJumping_ && !isShockwaveActive_) {
         isMovingToEdge_ = true;
     }
 
