@@ -14,6 +14,10 @@ public:
 
     ~Boss();
 
+    bool IsShockwaveActive() const { return isShockwaveActive_; }
+    Vector3 GetShockwavePos() const { return shockwavePos_; }
+    Vector3 GetShockwaveScale() const { return shockwaveScale_; }
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 

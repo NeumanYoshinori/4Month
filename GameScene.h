@@ -2,6 +2,7 @@
 #include "Boss.h" // ボスのヘッダーを忘れずにインクルード
 
 // 既存のエンジンのクラス
+class Player;
 class ModelCommon;
 class Object3dCommon;
 class Camera;
@@ -9,7 +10,7 @@ class Camera;
 class GameScene {
 public:
     void Initialize(Object3dCommon* object3dCommon, Camera* camera);
-    void Update();
+    void Update(Player* player);
     void Draw();
     // デストラクタで後片付けをするのが安全です
     ~GameScene();

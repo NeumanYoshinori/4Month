@@ -27,6 +27,7 @@
 #include "ParticleManager.h"
 #include "ParticleEmitter.h"
 #include "Player.h"
+#include "GameScene.h"
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxcompiler.lib")
@@ -310,6 +311,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// playerにカメラを紐づける
 	player->SetCamera(camera);
 
+
+	// ==========================================
+	// ★ 追加：GameScene（ボスと背景の管理者）を作る
+	// ==========================================
+	GameScene* gameScene = new GameScene();
+	gameScene->Initialize(object3dCommon, camera);
+
+
 	// パーティクルマネージャ
 	ParticleManager* particleManager = ParticleManager::GetInstance();
 	particleManager->Initialize(dxBase, srvManager, camera);
@@ -387,8 +396,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//rotation.x += 0.01f;
 		// フィールドの更新
-		field->Update();
+		//field->Update();
 		//field->SetRotate(rotation);
+
+		gameScene->Update(player);
 
 		// 開発用UIの処理
 		//ImGui::ShowDemoWindow();
@@ -413,7 +424,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//particleManager->Draw();
 		// 3Dオブジェクトの描画
-		field->Draw();
+		//field->Draw();
+
+		gameScene->Draw();
 
 		// 共通描画設定
 		spriteCommon->DrawSetting();
@@ -453,6 +466,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// カメラの解放
 	delete camera;
+
+	delete gameScene;
 
 	// パーティクルエミッターの解放
 	delete particleEmitter;
