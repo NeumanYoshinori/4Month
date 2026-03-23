@@ -2,6 +2,9 @@
 #include "Object3dCommon.h"
 #include "ModelManager.h" // ★これを超重要追加！
 #include "Camera.h"
+#include "Player.h" // ★ 追加：プレイヤーの情報を読み込む！
+#include <cmath>    // ★ 追加：三平方の定理のルート計算に必要！
+
 
 // 引数から ModelCommon を消してスッキリさせました
 void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
@@ -94,7 +97,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
 }
 
-void Boss::Update() {
+void Boss::Update(Player* player) {
     // ==========================================
     // 1. タイマーによる発射命令
     // ==========================================
@@ -118,43 +121,113 @@ void Boss::Update() {
     //}
 
 
-    // ==========================================
-    // 2. 左腕の状態遷移（ロケットパンチの動き）
-    // ==========================================
+    Vector3 leftShoulder = { bossPos_.x - 0.5f, bossPos_.y, bossPos_.z }; // 左肩の定位置
+
     switch (leftPunchState_) {
     case PunchState::kIdle:
-        break; // 待機中は動かさない
+        // 待機中は常に左肩の位置にピタッとくっついておく
+        leftArmPos_ = leftShoulder;
+        break;
+
     case PunchState::kPunch:
-        leftArmZ_ -= 0.1f; // 手前に飛ばす
-        if (leftArmZ_ < -12.0f) {
-            leftPunchState_ = PunchState::kReturn; // 限界まで飛んだら戻る
+        if (player) {
+            Vector3 pPos = player->GetTranslate();
+            Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z }; // プレイヤーのお腹を狙う
+
+            // 三平方の定理で距離と方向を出す！
+            float dx = targetPos.x - leftArmPos_.x;
+            float dy = targetPos.y - leftArmPos_.y;
+            float dz = targetPos.z - leftArmPos_.z;
+            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+            float speed = 0.1f; // ★ パンチの飛ぶスピード
+
+            if (distance > 0.0f) {
+                // 方向（1の長さ）にスピードを掛けて進む！
+                leftArmPos_.x += (dx / distance) * speed;
+                leftArmPos_.y += (dy / distance) * speed;
+                leftArmPos_.z += (dz / distance) * speed;
+            }
+        }
+
+        // タイマーを進めて、時間が来たら戻る
+        leftPunchTimer_++;
+        if (leftPunchTimer_ >= 120) { // ★ 120フレーム（約2秒）追いかけたら諦める
+            leftPunchState_ = PunchState::kReturn;
+            leftPunchTimer_ = 0; // タイマーリセット
         }
         break;
+
     case PunchState::kReturn:
-        leftArmZ_ += 0.2f; // 元の位置へ戻る
-        if (leftArmZ_ >= 0.0f) {
-            leftArmZ_ = 0.0f;
-            leftPunchState_ = PunchState::kIdle; // 戻りきったら待機状態へ
+        // 肩に向かってホーミングして戻る！
+        float dx = leftShoulder.x - leftArmPos_.x;
+        float dy = leftShoulder.y - leftArmPos_.y;
+        float dz = leftShoulder.z - leftArmPos_.z;
+        float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+        float returnSpeed = 0.4f; // 戻る時は少し速くする
+
+        if (distance > returnSpeed) {
+            leftArmPos_.x += (dx / distance) * returnSpeed;
+            leftArmPos_.y += (dy / distance) * returnSpeed;
+            leftArmPos_.z += (dz / distance) * returnSpeed;
+        } else {
+            leftArmPos_ = leftShoulder; // ピタッとくっつく
+            leftPunchState_ = PunchState::kIdle; // 待機状態へ！
         }
         break;
     }
 
     // ==========================================
-    // 3. 右腕の状態遷移（ロケットパンチの動き）
+    // 3. 右腕の状態遷移（ホーミングロケットパンチ）
     // ==========================================
+    Vector3 rightShoulder = { bossPos_.x + 0.5f, bossPos_.y, bossPos_.z }; // 右肩の定位置
+
     switch (rightPunchState_) {
     case PunchState::kIdle:
-        break; // 待機中は動かさない
+        rightArmPos_ = rightShoulder;
+        break;
+
     case PunchState::kPunch:
-        rightArmZ_ -= 0.1f;
-        if (rightArmZ_ < -12.0f) {
+        if (player) {
+            Vector3 pPos = player->GetTranslate();
+            Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z };
+
+            float dx = targetPos.x - rightArmPos_.x;
+            float dy = targetPos.y - rightArmPos_.y;
+            float dz = targetPos.z - rightArmPos_.z;
+            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+            float speed = 0.1f;
+
+            if (distance > 0.0f) {
+                rightArmPos_.x += (dx / distance) * speed;
+                rightArmPos_.y += (dy / distance) * speed;
+                rightArmPos_.z += (dz / distance) * speed;
+            }
+        }
+
+        rightPunchTimer_++;
+        if (rightPunchTimer_ >= 120) {
             rightPunchState_ = PunchState::kReturn;
+            rightPunchTimer_ = 0;
         }
         break;
+
     case PunchState::kReturn:
-        rightArmZ_ += 0.2f;
-        if (rightArmZ_ >= 0.0f) {
-            rightArmZ_ = 0.0f;
+        float dx = rightShoulder.x - rightArmPos_.x;
+        float dy = rightShoulder.y - rightArmPos_.y;
+        float dz = rightShoulder.z - rightArmPos_.z;
+        float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+        float returnSpeed = 0.4f;
+
+        if (distance > returnSpeed) {
+            rightArmPos_.x += (dx / distance) * returnSpeed;
+            rightArmPos_.y += (dy / distance) * returnSpeed;
+            rightArmPos_.z += (dz / distance) * returnSpeed;
+        } else {
+            rightArmPos_ = rightShoulder;
             rightPunchState_ = PunchState::kIdle;
         }
         break;
@@ -241,13 +314,12 @@ void Boss::Update() {
     // ==========================================
     // 4. 計算した結果を実際の3Dオブジェクトにセット
     // ==========================================
-    float armOffset = 0.5f; // 脇への距離
-    float yOffset = 1.0f;   // ★ 追加：地面に埋まらないようにする「見た目の高さ」
+    float yOffset = 1.0f;   // 地面に埋まらないようにする「見た目の高さ」
 
+    // ★修正：独立したXYZの座標をそのままセットする！
     objectBody_->SetTranslate({ bossPos_.x, bossPos_.y + yOffset, bossPos_.z });
-    objectLeftArm_->SetTranslate({ bossPos_.x - armOffset, bossPos_.y + yOffset, bossPos_.z + leftArmZ_ });
-    objectRightArm_->SetTranslate({ bossPos_.x + armOffset, bossPos_.y + yOffset, bossPos_.z + rightArmZ_ });
-
+    objectLeftArm_->SetTranslate({ leftArmPos_.x, leftArmPos_.y + yOffset, leftArmPos_.z });
+    objectRightArm_->SetTranslate({ rightArmPos_.x, rightArmPos_.y + yOffset, rightArmPos_.z });
     // 行列更新
     objectBody_->Update();
     objectLeftArm_->Update();

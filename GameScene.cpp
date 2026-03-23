@@ -42,7 +42,7 @@ void GameScene::Update(Player* player) {
 
     // 3. ボスの更新処理（移動や攻撃ロジック）を呼ぶ
     if (boss_) {
-        boss_->Update();
+        boss_->Update(player);
     }
 
     if (player && boss_) {

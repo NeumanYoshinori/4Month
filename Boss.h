@@ -4,12 +4,13 @@
 // ※ #include "Model.h" はもう要りません！
 
 class Object3dCommon;
+class Player;
 
 class Boss {
 public:
     // 引数を Object3dCommon だけに変更
     void Initialize(Object3dCommon* object3dCommon, Camera* camera);
-    void Update();
+    void Update(Player* player);
     void Draw();
 
     ~Boss();
@@ -26,9 +27,8 @@ public:
     bool IsRightPunching() const { return rightPunchState_ != PunchState::kIdle; }
 
     // 腕の現在のワールド座標（前回見た目を +1.0f 持ち上げたので、ここでも合わせます）
-    Vector3 GetLeftArmPos() const { return { bossPos_.x - 0.5f, bossPos_.y + 1.0f, bossPos_.z + leftArmZ_ }; }
-    Vector3 GetRightArmPos() const { return { bossPos_.x + 0.5f, bossPos_.y + 1.0f, bossPos_.z + rightArmZ_ }; }
-
+    Vector3 GetLeftArmPos() const { return leftArmPos_; }
+    Vector3 GetRightArmPos() const { return rightArmPos_; }
 
 private:
     // Model* modelBody_ などは全部消してOKです！
@@ -57,12 +57,15 @@ private:
     // 右腕の現在の状態
     PunchState rightPunchState_ = PunchState::kIdle;
 
-    // 右腕がどれくらい前に飛んでいるかの距離
-    float rightArmZ_ = 0.0f;
+    // ★ 追加：右腕の現在のワールド座標と、寿命タイマー
+    Vector3 rightArmPos_ = { 0.0f, 0.0f, 0.0f };
+    int rightPunchTimer_ = 0;
 
     //左腕の場合
     PunchState leftPunchState_ = PunchState::kIdle;
-    float leftArmZ_ = 0.0f;
+    // ★ 追加：左腕の現在のワールド座標と、寿命タイマー
+    Vector3 leftArmPos_ = { 0.0f, 0.0f, 0.0f };
+    int leftPunchTimer_ = 0;
 
     // 自動でパンチを撃たせるためのタイマー
     int attackTimer_ = 0;
