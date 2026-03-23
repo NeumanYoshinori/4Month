@@ -36,6 +36,23 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
 void GameScene::Update(Player* player) {
 
+    // ==========================================
+    // ★ プレゼン用魔法のキー（本番が終わったら消す！）
+    // ==========================================
+    if (boss_) {
+        // [8]キー：ボスのHPを残り1にする（次の一撃で第2形態へ）
+        if (GetAsyncKeyState('8') & 0x8000) {
+            boss_->SetHP(1);
+            OutputDebugStringA("Cheat: Boss HP set to 1 !!\n");
+        }
+        // [9]キー：ボスのHPを0にして、強制的に演出～第2形態をスタート！
+        if (GetAsyncKeyState('9') & 0x8000) {
+            boss_->ForcePhase2();
+            OutputDebugStringA("Cheat: Forced Phase 2 !!\n");
+        }
+    }
+
+
     if (field_) {
         field_->Update();
     }

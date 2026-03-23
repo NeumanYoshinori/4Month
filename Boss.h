@@ -30,6 +30,33 @@ public:
     Vector3 GetLeftArmPos() const { return leftArmPos_; }
     Vector3 GetRightArmPos() const { return rightArmPos_; }
 
+
+    // ==========================================
+    // ★ プレゼン＆進行用のHP・フェーズ管理
+    // ==========================================
+    int hp_ = 50;
+    Vector3 GetPos() const { return bossPos_; }
+
+    // ダメージを受けた時の処理
+    void OnDamage() {
+        if (hp_ > 0 && !isTransitioning_) {
+            hp_ -= 1;
+            if (hp_ <= 0 && phase_ == 1) {
+                isTransitioning_ = true; // 第1形態のHPが0になったら演出開始！
+            }
+        }
+    }
+
+    // ★ プレゼン用チート関数
+    void SetHP(int hp) { hp_ = hp; }
+    void ForcePhase2() {
+        if (phase_ == 1) {
+            hp_ = 0;
+            isTransitioning_ = true;
+        }
+    }
+
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 
@@ -80,6 +107,9 @@ private:
     bool isJumping_ = false;  // ジャンプ中かどうか
     float velocityY_ = 0.0f;  // Y軸の速度（プラスなら上昇、マイナスなら落下）
     bool isReturningToCenter_ = false;
+
+    // ★ 追加：第2形態の連続ジャンプ用
+    int jumpCount_ = 0; // 今何回ジャンプしたか
     // ==========================================
     // ★ 追加：衝撃波用のパラメータ
     // ==========================================
@@ -88,5 +118,14 @@ private:
     Vector3 shockwaveScale_ = { 0.1f, 0.1f, 0.1f }; // 衝撃波の大きさ
     Vector3 shockwavePos_ = { 0.0f, 0.0f, 0.0f };   // 衝撃波の位置
 
-    // 今後HPなどを追加
+
+
+    // ==========================================
+    // ★ フェーズ（形態）管理用パラメータ
+    // ==========================================
+    int phase_ = 1;                // 現在の形態（1 or 2）
+    bool isTransitioning_ = false; // 形態変化の演出中か
+    int transitionTimer_ = 0;      // 演出タイマー
+
+    
 };
