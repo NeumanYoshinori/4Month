@@ -127,6 +127,49 @@ void GameScene::Update(Player* player) {
                 OutputDebugStringA("Hit Right Punch!!!\n");
             }
         }
+
+        // ==========================================
+        // ★ 当たり判定（ホーミングミサイル vs プレイヤー）
+        // ==========================================
+        for (int i = 0; i < Boss::kMaxMissiles; i++) {
+            // ミサイルが存在している時だけ判定
+            if (boss_->IsMissileActive(i)) {
+                Vector3 pPos = player->GetTranslate();
+                Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z }; // プレイヤーの中心
+                Vector3 mPos = boss_->GetMissilePos(i);              // ミサイルの位置
+
+                float dx = pCenter.x - mPos.x;
+                float dy = pCenter.y - mPos.y;
+                float dz = pCenter.z - mPos.z;
+                float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                float hitRadius = 1.0f; // ミサイルの当たり判定の大きさ
+
+                if (distance < hitRadius) {
+                    OutputDebugStringA("Hit Missile!!!\n");
+                    // ※ ここでミサイルを消す場合は boss_ に「ミサイルを消す関数」を追加して呼びます
+                }
+            }
+        }
+
+        // ==========================================
+        // ★ 当たり判定（爆発範囲攻撃 vs プレイヤー）
+        // ==========================================
+        if (boss_->IsExplosionActive()) {
+            Vector3 pPos = player->GetTranslate();
+            Vector3 bPos = boss_->GetPos(); // 爆発の中心（ボスの位置）
+            Vector3 expScale = boss_->GetExplosionScale();
+
+            // ZとXの距離（平面での距離）を測る
+            float dx = pPos.x - bPos.x;
+            float dz = pPos.z - bPos.z;
+            float distance = std::sqrt(dx * dx + dz * dz);
+
+            // プレイヤーが爆発のスケール（半径）の内側にいたらヒット！
+            if (distance < expScale.x) {
+                OutputDebugStringA("Hit Explosion!!! (AoE)\n");
+            }
+        }
     }
 
 }

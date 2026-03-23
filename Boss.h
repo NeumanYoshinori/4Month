@@ -57,6 +57,19 @@ public:
     }
 
 
+    // ==========================================
+    // ★ 追加：第2形態ホーミングミサイル用
+    // ==========================================
+    static const int kMaxMissiles = 2; // 左右の肩から1発ずつ（計2発）
+    bool IsMissileActive(int index) const { return isMissileActive_[index]; }
+    Vector3 GetMissilePos(int index) const { return missilePos_[index]; }
+
+    // ==========================================
+    // ★ 追加：第2形態 吸引＆爆発攻撃用
+    // ==========================================
+    bool IsExplosionActive() const { return isExplosionActive_; }
+    Vector3 GetExplosionScale() const { return explosionScale_; }
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 
@@ -127,5 +140,22 @@ private:
     bool isTransitioning_ = false; // 形態変化の演出中か
     int transitionTimer_ = 0;      // 演出タイマー
 
+
+    // ==========================================
+    // ★ 追加：第2形態ホーミングミサイル用
+    // ==========================================
+    Object3d* missiles_[kMaxMissiles] = { nullptr, nullptr };
+    bool isMissileActive_[kMaxMissiles] = { false, false };
+    Vector3 missilePos_[kMaxMissiles];
+    Vector3 missileVelocity_[kMaxMissiles];
+    int missileHomingTimer_[kMaxMissiles] = { 0, 0 }; // ホーミングの寿命タイマー
     
+
+    // ==========================================
+    // ★ 追加：第2形態 吸引＆爆発攻撃用
+    // ==========================================
+    bool isSuctionActive_ = false;                  // 吸引中かどうか
+    Object3d* explosion_ = nullptr;                 // 爆発の3Dモデル
+    bool isExplosionActive_ = false;                // 爆発中かどうか
+    Vector3 explosionScale_ = { 0.1f, 0.1f, 0.1f }; // 爆発の広がり具合
 };

@@ -95,6 +95,27 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     shockwave_->SetCamera(camera);
     // ※ 先ほど追加した shockwave_->SetRotate(...) は消して大丈夫です！
 
+    // ==========================================
+    // 7. ★追加：ミサイルの準備
+    // ==========================================
+    // ※とりあえず既存の plane.obj を使いますが、後で missile.obj などに変えられます！
+    ModelManager::GetInstance()->LoadModel("plane.obj");
+
+    for (int i = 0; i < kMaxMissiles; i++) {
+        missiles_[i] = new Object3d();
+        missiles_[i]->Initialize(object3dCommon);
+        missiles_[i]->SetModel("plane.obj");
+        missiles_[i]->SetCamera(camera);
+    }
+
+    // ==========================================
+    // 8. ★ 追加：爆発（範囲攻撃）の準備
+    // ==========================================
+    explosion_ = new Object3d();
+    explosion_->Initialize(object3dCommon);
+    explosion_->SetModel("plane.obj"); // 波紋のように広がる円（平面）
+    explosion_->SetCamera(camera);
+
 }
 
 void Boss::Update(Player* player) {
@@ -171,10 +192,82 @@ void Boss::Update(Player* player) {
             attackTimer_++;
         }
 
+        // ==========================================
+        // ★ 攻撃0：ホーミングミサイル発射！
+        // ==========================================
+        if (attackTimer_ == 10) { // ジャンプ攻撃の少し前に撃つ！
+            for (int i = 0; i < kMaxMissiles; i++) {
+                isMissileActive_[i] = true;
+                missileHomingTimer_[i] = 75; // ★ 90フレーム（1.5秒間）だけホーミングする！
+
+                // 発射位置：ボスの少し上、左右に振り分ける
+                float offsetX = (i == 0) ? -2.0f : 2.0f;
+                missilePos_[i] = { bossPos_.x + offsetX, bossPos_.y + 3.0f, bossPos_.z };
+
+                // 最初の初速：上にフワッと撃ち上げる（マクロス風！）
+                missileVelocity_[i] = { 0.0f, 0.3f, -0.1f };
+            }
+        }
+
         // 攻撃1：連続ジャンプ衝撃波（3連続）
-        if (attackTimer_ >= 60 && !isMovingToEdge_ && !isJumping_ && !isShockwaveActive_ && !isReturningToCenter_) {
+        if (attackTimer_ == 60 && !isMovingToEdge_ && !isJumping_ && !isShockwaveActive_ && !isReturningToCenter_) {
             isMovingToEdge_ = true;
             jumpCount_ = 0; // ジャンプ回数をリセット
+        }
+
+        // ==========================================
+        // ★ 攻撃2：ブラックホール（プレイヤーを吸引）
+        // ==========================================
+        // タイマーが150〜330の間（約3秒間）、強烈に吸い寄せる！
+        if (attackTimer_ >= 150 && attackTimer_ < 330) {
+            isSuctionActive_ = true;
+
+            if (player) {
+                Vector3 pPos = player->GetTranslate();
+                float dx = bossPos_.x - pPos.x;
+                float dz = bossPos_.z - pPos.z; // 足元に吸い寄せるのでY（高さ）は無視
+                float dist = std::sqrt(dx * dx + dz * dz);
+
+                if (dist > 0.1f) {
+                    // ★ プレイヤーの逃げる速度（0.1f）より少しだけ遅い力（0.08f）で引っ張る
+                    // これにより「必死にSキーで走ればギリギリ逃げられる」絶妙なバランスになります！
+                    float suctionPower = 0.08f;
+                    pPos.x += (dx / dist) * suctionPower;
+                    pPos.z += (dz / dist) * suctionPower;
+
+                    // ボス側からプレイヤーの座標を上書きして強制移動させる！
+                    player->SetTranslate(pPos);
+                }
+            }
+        } else {
+            isSuctionActive_ = false;
+        }
+
+        // ==========================================
+        // ★ 攻撃3：大爆発（足元範囲ドカン！）
+        // ==========================================
+        // 吸引が終わった瞬間（330）に爆発スタート！
+        if (attackTimer_ == 330) {
+            isExplosionActive_ = true;
+            explosionScale_ = { 0.1f, 0.1f, 0.1f };
+        }
+
+        if (isExplosionActive_) {
+            // 猛スピードで巨大化していく！
+            explosionScale_.x += 1.5f;
+            explosionScale_.z += 1.5f;
+            explosionScale_.y = 0.5f; // 平面なので高さは固定
+
+            // 最大サイズ（15.0f）まで広がったら終了
+            if (explosionScale_.x > 15.0f) {
+                isExplosionActive_ = false;
+                // ★ タイマーを -100 にリセットし、再び「ミサイル → ジャンプ」のループへ戻る！
+                attackTimer_ = -100;
+            }
+
+            explosion_->SetTranslate({ bossPos_.x, 0.01f, bossPos_.z }); // ボスの足元
+            explosion_->SetScale(explosionScale_);
+            explosion_->Update();
         }
     }
 
@@ -269,7 +362,58 @@ void Boss::Update(Player* player) {
         if (bossPos_.z <= 10.0f) {
             bossPos_.z = 10.0f;
             isReturningToCenter_ = false;
-            attackTimer_ = (phase_ == 2) ? -100 : 0; // 第2形態は少し休む
+            attackTimer_ = (phase_ == 2) ? 100 : 0; // 第2形態は少し休む
+        }
+    }
+
+    // ==========================================
+    // ★ 追加：ミサイルの移動とホーミング処理
+    // ==========================================
+    for (int i = 0; i < kMaxMissiles; i++) {
+        if (isMissileActive_[i]) {
+
+            // 寿命が残っている間だけ、プレイヤーの方へ曲がる（ホーミング）
+            if (missileHomingTimer_[i] > 0) {
+                missileHomingTimer_[i]--; // タイマーを減らす
+
+                if (player) {
+                    Vector3 pPos = player->GetTranslate();
+                    Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z };
+
+                    float dx = targetPos.x - missilePos_[i].x;
+                    float dy = targetPos.y - missilePos_[i].y;
+                    float dz = targetPos.z - missilePos_[i].z;
+                    float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                    if (distance > 0.0f) {
+                        float speed = 0.2f; // ミサイルの最高速度
+                        Vector3 desiredVel = { (dx / distance) * speed, (dy / distance) * speed, (dz / distance) * speed };
+
+                        // ★ プロの技：「今の速度」と「行きたい方向」を混ぜることで、美しいカーブを描く！
+                        missileVelocity_[i].x = (missileVelocity_[i].x * 0.95f) + (desiredVel.x * 0.05f);
+                        missileVelocity_[i].y = (missileVelocity_[i].y * 0.95f) + (desiredVel.y * 0.05f);
+                        missileVelocity_[i].z = (missileVelocity_[i].z * 0.95f) + (desiredVel.z * 0.05f);
+                    }
+                }
+            }
+            // ※ タイマーが0になったら上の if文 を無視するので、速度(Velocity)が更新されず、
+            //    そのままの角度で「直進」し続けます！（＝ホーミング切れ）
+
+            // 速度を足して移動させる
+            missilePos_[i].x += missileVelocity_[i].x;
+            missilePos_[i].y += missileVelocity_[i].y;
+            missilePos_[i].z += missileVelocity_[i].z;
+
+            // 地面に当たるか、画面のずっと奥/手前に行ったら消滅
+            if (missilePos_[i].y <= 0.0f || missilePos_[i].z < -30.0f || missilePos_[i].z > 30.0f) {
+                isMissileActive_[i] = false;
+            } else {
+                // 3Dオブジェクトに座標をセットして更新
+                missiles_[i]->SetTranslate(missilePos_[i]);
+                missiles_[i]->SetScale({ 0.5f, 0.5f, 0.5f }); // 弾のサイズ
+                missiles_[i]->SetRotate({ 0.0f, 0.0f, 0.0f });
+                missiles_[i]->Update();
+            }
         }
     }
 
@@ -298,6 +442,16 @@ void Boss::Draw() {
     if (isShockwaveActive_ && shockwave_) {
         shockwave_->Draw();
     }
+
+    for (int i = 0; i < kMaxMissiles; i++) {
+        if (isMissileActive_[i] && missiles_[i]) {
+            missiles_[i]->Draw();
+        }
+    }
+
+    if (isExplosionActive_ && explosion_) {
+        explosion_->Draw();
+    }
 }
 
 Boss::~Boss() {
@@ -305,5 +459,12 @@ Boss::~Boss() {
     delete objectLeftArm_;
     delete objectRightArm_;
     delete shockwave_;
+
+    // ★ 追加：ミサイルのメモリを解放する
+    for (int i = 0; i < kMaxMissiles; i++) {
+        delete missiles_[i];
+    }
+
+    delete explosion_;
 }
 
