@@ -60,12 +60,14 @@ private:
     // ★ 追加：右腕の現在のワールド座標と、寿命タイマー
     Vector3 rightArmPos_ = { 0.0f, 0.0f, 0.0f };
     int rightPunchTimer_ = 0;
+    Vector3 rightArmVelocity_ = { 0.0f, 0.0f, 0.0f };
 
     //左腕の場合
     PunchState leftPunchState_ = PunchState::kIdle;
     // ★ 追加：左腕の現在のワールド座標と、寿命タイマー
     Vector3 leftArmPos_ = { 0.0f, 0.0f, 0.0f };
     int leftPunchTimer_ = 0;
+    Vector3 leftArmVelocity_ = { 0.0f, 0.0f, 0.0f };
 
     // 自動でパンチを撃たせるためのタイマー
     int attackTimer_ = 0;

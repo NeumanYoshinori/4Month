@@ -109,10 +109,48 @@ void Boss::Update(Player* player) {
     // 左腕パンチ
     if (attackTimer_ == 60 && leftPunchState_ == PunchState::kIdle) {
         leftPunchState_ = PunchState::kPunch;
+
+        // ★ 追加：発射の瞬間に1回だけ、プレイヤーの方向を計算して保存する！
+        if (player) {
+            Vector3 pPos = player->GetTranslate();
+            Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z };
+
+            float dx = targetPos.x - leftArmPos_.x;
+            float dy = targetPos.y - leftArmPos_.y;
+            float dz = targetPos.z - leftArmPos_.z;
+            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+            float speed = 0.5f; // ★ 一直線なので、少し速め（0.5fなど）にするとカッコいいです
+            if (distance > 0.0f) {
+                leftArmVelocity_.x = (dx / distance) * speed;
+                leftArmVelocity_.y = (dy / distance) * speed;
+                leftArmVelocity_.z = (dz / distance) * speed;
+            }
+        }
+
     }
+
     // 右腕パンチ（※念のため >= 120 ではなく == 120 にして事故を防ぎます）
     if (attackTimer_ == 120 && rightPunchState_ == PunchState::kIdle) {
         rightPunchState_ = PunchState::kPunch;
+
+        // ★ 追加：右腕も同様に計算して保存する！
+        if (player) {
+            Vector3 pPos = player->GetTranslate();
+            Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z };
+
+            float dx = targetPos.x - rightArmPos_.x;
+            float dy = targetPos.y - rightArmPos_.y;
+            float dz = targetPos.z - rightArmPos_.z;
+            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+            float speed = 0.5f;
+            if (distance > 0.0f) {
+                rightArmVelocity_.x = (dx / distance) * speed;
+                rightArmVelocity_.y = (dy / distance) * speed;
+                rightArmVelocity_.z = (dz / distance) * speed;
+            }
+        }
     }
     // ③ 180フレーム（約3秒）でジャンプ開始！
     //if (attackTimer_ >= 180 && !isJumping_) {
@@ -130,31 +168,44 @@ void Boss::Update(Player* player) {
         break;
 
     case PunchState::kPunch:
-        if (player) {
-            Vector3 pPos = player->GetTranslate();
-            Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z }; // プレイヤーのお腹を狙う
+        //ここはホーミングにする場合
+        //if (player) {
+        //    Vector3 pPos = player->GetTranslate();
+        //    Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z }; // プレイヤーのお腹を狙う
 
-            // 三平方の定理で距離と方向を出す！
-            float dx = targetPos.x - leftArmPos_.x;
-            float dy = targetPos.y - leftArmPos_.y;
-            float dz = targetPos.z - leftArmPos_.z;
-            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+        //    // 三平方の定理で距離と方向を出す！
+        //    float dx = targetPos.x - leftArmPos_.x;
+        //    float dy = targetPos.y - leftArmPos_.y;
+        //    float dz = targetPos.z - leftArmPos_.z;
+        //    float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-            float speed = 0.1f; // ★ パンチの飛ぶスピード
+        //    float speed = 0.1f; // ★ パンチの飛ぶスピード
 
-            if (distance > 0.0f) {
-                // 方向（1の長さ）にスピードを掛けて進む！
-                leftArmPos_.x += (dx / distance) * speed;
-                leftArmPos_.y += (dy / distance) * speed;
-                leftArmPos_.z += (dz / distance) * speed;
-            }
-        }
+        //    if (distance > 0.0f) {
+        //        // 方向（1の長さ）にスピードを掛けて進む！
+        //        leftArmPos_.x += (dx / distance) * speed;
+        //        leftArmPos_.y += (dy / distance) * speed;
+        //        leftArmPos_.z += (dz / distance) * speed;
+        //    }
+        //}
 
-        // タイマーを進めて、時間が来たら戻る
+        //// タイマーを進めて、時間が来たら戻る
+        //leftPunchTimer_++;
+        //if (leftPunchTimer_ >= 120) { // ★ 120フレーム（約2秒）追いかけたら諦める
+        //    leftPunchState_ = PunchState::kReturn;
+        //    leftPunchTimer_ = 0; // タイマーリセット
+        //}
+        //break;
+
+        // ★ 毎フレームの計算をやめて、保存しておいた速度を足すだけにする！
+        leftArmPos_.x += leftArmVelocity_.x;
+        leftArmPos_.y += leftArmVelocity_.y;
+        leftArmPos_.z += leftArmVelocity_.z;
+
         leftPunchTimer_++;
-        if (leftPunchTimer_ >= 120) { // ★ 120フレーム（約2秒）追いかけたら諦める
+        if (leftPunchTimer_ >= 120) {
             leftPunchState_ = PunchState::kReturn;
-            leftPunchTimer_ = 0; // タイマーリセット
+            leftPunchTimer_ = 0;
         }
         break;
 
@@ -189,7 +240,8 @@ void Boss::Update(Player* player) {
         break;
 
     case PunchState::kPunch:
-        if (player) {
+        //ここはホーミングにする場合
+        /*if (player) {
             Vector3 pPos = player->GetTranslate();
             Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z };
 
@@ -206,6 +258,18 @@ void Boss::Update(Player* player) {
                 rightArmPos_.z += (dz / distance) * speed;
             }
         }
+
+        rightPunchTimer_++;
+        if (rightPunchTimer_ >= 120) {
+            rightPunchState_ = PunchState::kReturn;
+            rightPunchTimer_ = 0;
+        }
+        break;*/
+
+        // ★ 右腕も保存しておいた速度を足すだけ！
+        rightArmPos_.x += rightArmVelocity_.x;
+        rightArmPos_.y += rightArmVelocity_.y;
+        rightArmPos_.z += rightArmVelocity_.z;
 
         rightPunchTimer_++;
         if (rightPunchTimer_ >= 120) {
