@@ -9,6 +9,8 @@
 #include "Model.h"
 #include "ModelManager.h"
 #include "Camera.h"
+#include <cmath>
+#include <algorithm>
 
 class Object3dCommon;
 class Input;
@@ -91,5 +93,14 @@ private:
 
 	// カメラ
 	Camera* camera_ = nullptr;
-};
 
+	float velocityY = 0.0f;   // Y軸方向の速度（落下やジャンプ）
+	float gravity = 0.01f;    // 重力の強さ（毎フレーム下に向かって加速する量）
+	float jumpSpeed = 0.2f;   // ジャンプの初速（ジャンプ力）
+	bool isGrounded = false;  // 地面についているかどうかのフラグ
+
+	float cameraAngleX = 0.2f;   // 上下の角度（ピッチ）
+	float cameraYawOffset = 0.0f;   // 左右の角度（ヨー）
+	float cameraDistance = 8.0f; // プレイヤーからカメラまでの距離
+	POINT preMousePos = { 0, 0 };  // 前回のマウス座標
+};
