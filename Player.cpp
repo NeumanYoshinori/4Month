@@ -137,6 +137,11 @@ void Player::Update(Input* input) {
 		cameraPos.y = targetPos.y + std::sin(cameraAngleX) * cameraDistance;
 		cameraPos.z = targetPos.z - std::cos(transform.rotate.y) * std::cos(cameraAngleX) * cameraDistance;
 
+		// 地面を Y=0.0f とした場合、カメラの最低高度を 1.0f に制限する
+		if (cameraPos.y < 1.0f) {
+			cameraPos.y = 1.0f;
+		}
+
 		// カメラに位置と角度をセット
 		camera_->SetTranslate(cameraPos);
 		camera_->SetRotate({ cameraAngleX, transform.rotate.y, 0.0f });

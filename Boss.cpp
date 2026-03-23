@@ -21,7 +21,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     objectBody_->SetModel("alphaBoss.obj");
 
 
-    // ==========================================
+    // ==========================================, ,
     // 2. 左腕（Left Arm）の準備
     // ==========================================
     ModelManager::GetInstance()->LoadModel("alphaBossLeftArm.obj");
@@ -71,7 +71,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     float armOffset = 2.0f;
 
     // 左腕はマイナス方向、右腕はプラス方向にズラす
-  // もし前後（胸と背中）に腕がいってしまった場合の書き方
+    // もし前後（胸と背中）に腕がいってしまった場合の書き方
     Vector3 leftArmPos = { bossPos_.x - armOffset, bossPos_.y, bossPos_.z };
     Vector3 rightArmPos = { bossPos_.x + armOffset, bossPos_.y, bossPos_.z };
 
@@ -87,11 +87,11 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // 6. 衝撃波の準備
     // ==========================================
     // plane.obj や cube.obj に戻す！
-    ModelManager::GetInstance()->LoadModel("plane.obj");
+    ModelManager::GetInstance()->LoadModel("wave.obj");
 
     shockwave_ = new Object3d();
     shockwave_->Initialize(object3dCommon);
-    shockwave_->SetModel("plane.obj");
+    shockwave_->SetModel("wave.obj");
     shockwave_->SetCamera(camera);
     // ※ 先ほど追加した shockwave_->SetRotate(...) は消して大丈夫です！
 
@@ -99,21 +99,23 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // 7. ★追加：ミサイルの準備
     // ==========================================
     // ※とりあえず既存の plane.obj を使いますが、後で missile.obj などに変えられます！
-    ModelManager::GetInstance()->LoadModel("plane.obj");
+    ModelManager::GetInstance()->LoadModel("missile.obj");
 
     for (int i = 0; i < kMaxMissiles; i++) {
         missiles_[i] = new Object3d();
         missiles_[i]->Initialize(object3dCommon);
-        missiles_[i]->SetModel("plane.obj");
+        missiles_[i]->SetModel("missile.obj");
         missiles_[i]->SetCamera(camera);
     }
 
     // ==========================================
     // 8. ★ 追加：爆発（範囲攻撃）の準備
     // ==========================================
+    ModelManager::GetInstance()->LoadModel("explosion.obj");
+
     explosion_ = new Object3d();
     explosion_->Initialize(object3dCommon);
-    explosion_->SetModel("plane.obj"); // 波紋のように広がる円（平面）
+    explosion_->SetModel("explosion.obj"); // 波紋のように広がる円（平面）
     explosion_->SetCamera(camera);
 
 }
@@ -254,12 +256,12 @@ void Boss::Update(Player* player) {
 
         if (isExplosionActive_) {
             // 猛スピードで巨大化していく！
-            explosionScale_.x += 1.5f;
-            explosionScale_.z += 1.5f;
-            explosionScale_.y = 0.5f; // 平面なので高さは固定
+            explosionScale_.x += 0.5f;
+            explosionScale_.z += 0.5f;
+            explosionScale_.y = 1.0f; // 平面なので高さは固定
 
             // 最大サイズ（15.0f）まで広がったら終了
-            if (explosionScale_.x > 15.0f) {
+            if (explosionScale_.x > 7.5f) {
                 isExplosionActive_ = false;
                 // ★ タイマーを -100 にリセットし、再び「ミサイル → ジャンプ」のループへ戻る！
                 attackTimer_ = -100;
@@ -404,6 +406,14 @@ void Boss::Update(Player* player) {
             missilePos_[i].y += missileVelocity_[i].y;
             missilePos_[i].z += missileVelocity_[i].z;
 
+            // 2. ★追加：進行方向を向かせるための回転計算
+            // atan2(x, z) で、XZ平面上の進んでいる角度を求めます
+            float angleY = std::atan2(missileVelocity_[i].x, missileVelocity_[i].z);
+
+            // 上下方向（ピッチ）の角度も計算（y と 平面の速度から算出）
+            float velocityXZ = std::sqrt(missileVelocity_[i].x * missileVelocity_[i].x + missileVelocity_[i].z * missileVelocity_[i].z);
+            float angleX = std::atan2(-missileVelocity_[i].y, velocityXZ);
+
             // 地面に当たるか、画面のずっと奥/手前に行ったら消滅
             if (missilePos_[i].y <= 0.0f || missilePos_[i].z < -30.0f || missilePos_[i].z > 30.0f) {
                 isMissileActive_[i] = false;
@@ -411,7 +421,7 @@ void Boss::Update(Player* player) {
                 // 3Dオブジェクトに座標をセットして更新
                 missiles_[i]->SetTranslate(missilePos_[i]);
                 missiles_[i]->SetScale({ 0.5f, 0.5f, 0.5f }); // 弾のサイズ
-                missiles_[i]->SetRotate({ 0.0f, 0.0f, 0.0f });
+                missiles_[i]->SetRotate({ angleX, angleY, 0.0f });
                 missiles_[i]->Update();
             }
         }
