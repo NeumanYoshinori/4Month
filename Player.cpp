@@ -11,6 +11,8 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 
 	dxBase_ = object3dCommon_->GetDxBase();
 
+	ModelManager::GetInstance()->LoadModel("cube.obj");
+
 	// 座標変換行列データ作成
 	CreateTransformationMatrixData();
 
@@ -126,7 +128,7 @@ void Player::Update(Input* input) {
 	// ★ 追加：弾の発射処理（チャージショット対応）
 	// ==========================================
 	// 左クリックが押されているかチェック (0x8000 で押下状態を判定)
-	if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+	if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState('M') & 0x8000)) {
 		isCharging_ = true;
 		chargeTimer_++;
 	} else {
