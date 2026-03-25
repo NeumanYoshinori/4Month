@@ -11,6 +11,8 @@
 #include "Camera.h"
 #include <cmath>
 #include <algorithm>
+#include <list>
+#include "Object3d.h"
 
 class Object3dCommon;
 class Input;
@@ -29,6 +31,14 @@ public: // メンバ関数
 		Vector4 color;
 		Vector3 direction;
 		float intensity;
+	};
+
+	struct Bullet {
+		Object3d* obj = nullptr;        // 弾の3Dモデル（キューブ）
+		Vector3 position; // 現在の座標
+		Vector3 velocity; // 飛んでいく方向とスピード
+		int lifeTimer = 0;              // 弾が消えるまでの寿命
+		bool isDead = false;            // 死んだかどうかのフラグ
 	};
 
 	// 初期化
@@ -58,6 +68,8 @@ public: // メンバ関数
 
 	// setter
 	void SetCamera(Camera* camera) { camera_ = camera; }
+
+	void FireBullet(float speed, float scale, int lifeTime);
 
 private:
 	// 座標変換行列データ作成
@@ -103,5 +115,9 @@ private:
 	float cameraYawOffset = 0.0f;   // 左右の角度（ヨー）
 	float cameraDistance = 8.0f; // プレイヤーからカメラまでの距離
 	POINT preMousePos = { 0, 0 };  // 前回のマウス座標
+
+	int chargeTimer = 0;        // 溜めている時間（フレーム数）
+	bool prevLButton = false;   // 1フレーム前に左クリックを押していたか
+	std::list<Bullet*> bullets_;
 };
 

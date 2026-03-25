@@ -286,6 +286,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
 	ModelManager::GetInstance()->LoadModel("field.obj");
+	ModelManager::GetInstance()->LoadModel("cube.obj");
 
 	// 3dオブジェクトの初期化
 	Object3d* field = new Object3d();

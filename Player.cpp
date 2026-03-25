@@ -29,16 +29,14 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 void Player::Update(Input* input) {
 
 	// ==========================================
-	// 1. マウスによる視点・向きの操作（★無限回転対応）
+	// 1. マウスによる視点移動
 	// ==========================================
 	if (camera_) {
 		// 現在のマウス座標を取得
 		POINT currentMousePos;
 		GetCursorPos(&currentMousePos);
 
-		// ★画面の中心座標
-		// ※ご自身のゲーム画面の解像度に合わせて変更してください
-		// 例：1280x720のウィンドウなら 640 と 360 にします
+		// 画面の中心座標
 		int centerX = 1280 / 2;
 		int centerY = 720 / 2;
 
@@ -70,11 +68,11 @@ void Player::Update(Input* input) {
 	if (input) {
 		float speed = 0.1f;
 
-		// プレイヤーが向いている「正面」と「右」のベクトルを計算
+		// プレイヤーが向いている向きベクトルを計算
 		Vector3 forward = { std::sin(transform.rotate.y), 0.0f, std::cos(transform.rotate.y) };
 		Vector3 right = { std::cos(transform.rotate.y), 0.0f, -std::sin(transform.rotate.y) };
 
-		// W・Sキーで正面・後ろへ移動
+		// WASD移動
 		if (input->PushKey(DIK_W)) {
 			transform.translate.x += forward.x * speed;
 			transform.translate.z += forward.z * speed;
@@ -83,7 +81,6 @@ void Player::Update(Input* input) {
 			transform.translate.x -= forward.x * speed;
 			transform.translate.z -= forward.z * speed;
 		}
-		// A・Dキーで左・右へカニ歩き（ストレイフ）移動
 		if (input->PushKey(DIK_A)) {
 			transform.translate.x -= right.x * speed;
 			transform.translate.z -= right.z * speed;
@@ -96,7 +93,7 @@ void Player::Update(Input* input) {
 		// 重力を加算して落下させる
 		velocityY -= gravity;
 
-		// スペースキーが押された瞬間 ＆ 地面にいる時だけジャンプ！
+		// スペースキーが押された瞬間 ＆ 地面にいる時だけジャンプ
 		if (input->TriggerKey(DIK_SPACE) && isGrounded) {
 			velocityY = jumpSpeed;
 			isGrounded = false; // 空中判定にする
@@ -106,8 +103,7 @@ void Player::Update(Input* input) {
 		transform.translate.y += velocityY;
 
 		// 簡易的な地面との当たり判定 (Y=0.0f を地面とする場合)
-		// ※もしレイキャストやAABBの処理を既に作っていた場合は、ここをそちらに差し替えてください
-		float groundHeight = 0.0f;
+		float groundHeight = 0.0f;// 後で変える
 
 		if (transform.translate.y <= groundHeight) {
 			// 地面にめり込んだら、地面の高さに押し戻す
@@ -144,6 +140,61 @@ void Player::Update(Input* input) {
 	}
 
 	// ==========================================
+	// 射撃と溜め攻撃の処理
+	// ==========================================
+	bool currentLButton = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+	if (currentLButton) {
+		if (!prevLButton) {
+			// 💥 基本攻撃！（速さ 2.0f, 大きさ 0.2f, 寿命 60フレーム）
+			FireBullet(2.0f, 0.2f, 60);
+		}
+		chargeTimer++;
+	}
+	else {
+		if (prevLButton) {
+			if (chargeTimer >= 180) {
+				// 溜め攻撃！（速さ 3.0f, 大きさ 1.5f, 寿命 120フレーム）
+				FireBullet(3.0f, 1.5f, 120);
+			}
+			chargeTimer = 0;
+		}
+	}
+	prevLButton = currentLButton;
+
+	// ==========================================
+	//　弾の移動
+	// ==========================================
+	for (auto it = bullets_.begin(); it != bullets_.end(); ) {
+		Bullet* b = *it;
+
+		// 座標を速度分だけ移動させる
+		b->position.x += b->velocity.x;
+		b->position.y += b->velocity.y;
+		b->position.z += b->velocity.z;
+
+		// Object3dに座標をセットして更新
+		b->obj->SetTranslate(b->position);
+		b->obj->Update();
+
+		// 寿命を減らす
+		b->lifeTimer--;
+		if (b->lifeTimer <= 0) {
+			b->isDead = true;
+		}
+
+		// もし死んでいたらリストから消し、メモリを解放する
+		if (b->isDead) {
+			delete b->obj;
+			delete b;
+			it = bullets_.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
+
+	// ==========================================
 	// 4. 行列の計算とデータ転送（既存の処理）
 	// ==========================================
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
@@ -162,6 +213,7 @@ void Player::Update(Input* input) {
 }
 
 void Player::Draw() {
+
 	// コマンドリストを作成
 	commandList = dxBase_->GetCommandList();
 
@@ -173,6 +225,10 @@ void Player::Draw() {
 	// 3Dモデルが割り当てられていれば描画する
 	if (model_) {
 		model_->Draw();
+	}
+
+	for (auto bullet : bullets_) {
+		bullet->obj->Draw();
 	}
 }
 
@@ -204,4 +260,34 @@ void Player::CreateDirectionalLight() {
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intensity = 1.0f;
+}
+
+void Player::FireBullet(float speed, float scale, int lifeTime) {
+
+	// 新しい弾を作る
+	Bullet* newBullet = new Bullet();
+
+	// 3Dオブジェクトの生成と初期化
+	newBullet->obj = new Object3d();
+	newBullet->obj->Initialize(object3dCommon_);
+	newBullet->obj->SetModel("cube.obj");
+	newBullet->obj->SetCamera(camera_);
+
+	// 弾の初期座標（プレイヤーの少し前、少し上）
+	newBullet->position = transform.translate;
+	newBullet->position.y += 1.0f; // 地面ではなく胸〜銃の高さから発射する
+
+	// プレイヤーが向いている方向(Y軸回転)と、カメラの上下(ピッチ)を使って計算します
+	newBullet->velocity.x = std::sin(transform.rotate.y) * speed;
+	newBullet->velocity.y = std::sin(-cameraAngleX) * speed; // 見下ろしている時は下へ飛ぶようにマイナスにする
+	newBullet->velocity.z = std::cos(transform.rotate.y) * speed;
+
+	// キューブの大きさをセット
+	newBullet->obj->SetScale({ scale, scale, scale });
+
+	// 寿命をセット
+	newBullet->lifeTimer = lifeTime;
+
+	// リストに弾を追加！
+	bullets_.push_back(newBullet);
 }
