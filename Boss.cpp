@@ -45,7 +45,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
      // 4. サイズと初期位置の設定
      // ==========================================
      // ① サイズを小さくする（0.1倍など、ちょうどいいサイズを探します）
-    Vector3 bossScale = { 0.1f, 0.1f, 0.1f }; // ★ここを 0.5f や 0.05f などに変えて調整
+    Vector3 bossScale = { 0.5f, 0.5f, 0.5f }; // ★ここを 0.5f や 0.05f などに変えて調整
     objectBody_->SetScale(bossScale);
     objectLeftArm_->SetScale(bossScale);
     objectRightArm_->SetScale(bossScale);
@@ -93,7 +93,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     shockwave_->Initialize(object3dCommon);
     shockwave_->SetModel("wave.obj");
     shockwave_->SetCamera(camera);
-    // ※ 先ほど追加した shockwave_->SetRotate(...) は消して大丈夫です！
+   
 
     // ==========================================
     // 7. ★追加：ミサイルの準備
@@ -122,6 +122,51 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
 void Boss::Update(Player* player) {
 
+    if (isDead_) { return; }
+
+    // ==========================================
+     // スタン（気絶）中の処理！
+     // ==========================================
+    if (stunTimer_ > 0) {
+        stunTimer_--;
+
+        // 1. 回転の計算
+        float spinSpeed = 0.2f;
+        int elapsedFrames = 180 - stunTimer_;
+        float currentYaw = elapsedFrames * spinSpeed;
+
+        // 2. 胴体を回して更新
+        objectBody_->SetTranslate({ bossPos_.x, bossPos_.y + 1.0f, bossPos_.z });
+        objectBody_->SetRotate({ 0.0f, currentYaw, 0.0f });
+        objectBody_->Update();
+
+  
+        float radius = 0.5f; // 肩幅（中心からの距離）
+
+        // 左腕の計算（sinとcosで円を描く）
+        Vector3 leftPos;
+        leftPos.x = bossPos_.x - radius * std::cos(currentYaw);
+        leftPos.y = bossPos_.y + 1.0f;
+        leftPos.z = bossPos_.z + radius * std::sin(currentYaw);
+
+        objectLeftArm_->SetTranslate(leftPos);
+        objectLeftArm_->SetRotate({ 0.0f, currentYaw, 0.0f });
+        objectLeftArm_->Update(); // ★ 超重要：腕のUpdateを呼ぶ！
+
+        // 右腕の計算（左腕の反対側）
+        Vector3 rightPos;
+        rightPos.x = bossPos_.x + radius * std::cos(currentYaw);
+        rightPos.y = bossPos_.y + 1.0f;
+        rightPos.z = bossPos_.z - radius * std::sin(currentYaw);
+
+        objectRightArm_->SetTranslate(rightPos);
+        objectRightArm_->SetRotate({ 0.0f, currentYaw, 0.0f });
+        objectRightArm_->Update(); // ★ 超重要：腕のUpdateを呼ぶ！
+
+        // 更新が終わったのでここでスキップ
+        return;
+    }
+
     // ==========================================
     // ① 形態変化（第1 → 第2）の演出中！
     // ==========================================
@@ -137,7 +182,7 @@ void Boss::Update(Player* player) {
         // 120フレーム（2秒）経ったら第2形態スタート！
         if (transitionTimer_ >= 120) {
             phase_ = 2;              // 第2形態へ！
-            hp_ = 100;               // ★ 第2形態のHP！
+            hp_ = 10;               // ★ 第2形態のHP！
             attackTimer_ = 0;        // 攻撃タイマーリセット
             isTransitioning_ = false;// 演出終了
             jumpCount_ = 0;          // ジャンプ回数リセット
@@ -148,7 +193,8 @@ void Boss::Update(Player* player) {
     // ② 第1形態の動き（今までの自機狙いロケットパンチ）
     // ==========================================
     else if (phase_ == 1) {
-        if (!isMovingToEdge_ && !isJumping_ && !isShockwaveActive_ && !isReturningToCenter_) {
+        if (!isMovingToEdge_ && !isJumping_ && !isShockwaveActive_ && !isReturningToCenter_ &&
+            leftPunchState_ == PunchState::kIdle && rightPunchState_ == PunchState::kIdle) {
             attackTimer_++;
         }
 
@@ -157,7 +203,7 @@ void Boss::Update(Player* player) {
             leftPunchState_ = PunchState::kPunch;
             if (player) {
                 Vector3 pPos = player->GetTranslate();
-                Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z };
+                Vector3 targetPos = { pPos.x, pPos.y, pPos.z };
                 float dx = targetPos.x - leftArmPos_.x; float dy = targetPos.y - leftArmPos_.y; float dz = targetPos.z - leftArmPos_.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
                 float speed = 0.5f;
@@ -171,7 +217,7 @@ void Boss::Update(Player* player) {
             rightPunchState_ = PunchState::kPunch;
             if (player) {
                 Vector3 pPos = player->GetTranslate();
-                Vector3 targetPos = { pPos.x, pPos.y + 1.0f, pPos.z };
+                Vector3 targetPos = { pPos.x, pPos.y, pPos.z };
                 float dx = targetPos.x - rightArmPos_.x; float dy = targetPos.y - rightArmPos_.y; float dz = targetPos.z - rightArmPos_.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
                 float speed = 0.5f;
@@ -195,19 +241,20 @@ void Boss::Update(Player* player) {
         }
 
         // ==========================================
-        // ★ 攻撃0：ホーミングミサイル発射！
+        //  攻撃0：ホーミングミサイル発射！
         // ==========================================
         if (attackTimer_ == 10) { // ジャンプ攻撃の少し前に撃つ！
             for (int i = 0; i < kMaxMissiles; i++) {
                 isMissileActive_[i] = true;
-                missileHomingTimer_[i] = 75; // ★ 90フレーム（1.5秒間）だけホーミングする！
+                missileHomingTimer_[i] = 75; //  90フレーム（1.5秒間）だけホーミングする！
 
                 // 発射位置：ボスの少し上、左右に振り分ける
-                float offsetX = (i == 0) ? -2.0f : 2.0f;
+                float offsetX = -3.0f + (i * 2.0f); // iが増えるごとに右にズレる
                 missilePos_[i] = { bossPos_.x + offsetX, bossPos_.y + 3.0f, bossPos_.z };
 
-                // 最初の初速：上にフワッと撃ち上げる（マクロス風！）
-                missileVelocity_[i] = { 0.0f, 0.3f, -0.1f };
+                // 最初の初速：上にフワッと撃ち上げる
+                float spreadX = (offsetX * 0.1f); // 外側に広がる力
+                missileVelocity_[i] = { spreadX, 0.4f, -0.1f };
             }
         }
 
@@ -274,37 +321,75 @@ void Boss::Update(Player* player) {
     }
 
     // ==========================================
-    // 全形態共通：腕の移動処理
-    // ==========================================
-    Vector3 leftShoulder = { bossPos_.x - 0.5f, bossPos_.y, bossPos_.z };
-    switch (leftPunchState_) {
-    case PunchState::kIdle: leftArmPos_ = leftShoulder; break;
-    case PunchState::kPunch:
-        leftArmPos_.x += leftArmVelocity_.x; leftArmPos_.y += leftArmVelocity_.y; leftArmPos_.z += leftArmVelocity_.z;
-        leftPunchTimer_++;
-        if (leftPunchTimer_ >= 100) { leftPunchState_ = PunchState::kReturn; leftPunchTimer_ = 0; }
-        break;
-    case PunchState::kReturn:
-        float dx = leftShoulder.x - leftArmPos_.x; float dy = leftShoulder.y - leftArmPos_.y; float dz = leftShoulder.z - leftArmPos_.z;
-        float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist > 0.5f) { leftArmPos_.x += (dx / dist) * 0.5f; leftArmPos_.y += (dy / dist) * 0.5f; leftArmPos_.z += (dz / dist) * 0.5f; } else { leftArmPos_ = leftShoulder; leftPunchState_ = PunchState::kIdle; }
-        break;
-    }
+      // 全形態共通：腕の移動処理
+      // ==========================================
+      Vector3 leftShoulder = { bossPos_.x - 2.5f, bossPos_.y, bossPos_.z };
+      switch (leftPunchState_) {
+      case PunchState::kIdle: leftArmPos_ = leftShoulder; break;
+      case PunchState::kPunch:
+          leftArmPos_.x += leftArmVelocity_.x; leftArmPos_.y += leftArmVelocity_.y; leftArmPos_.z += leftArmVelocity_.z;
+          leftPunchTimer_++;
+          if (leftPunchTimer_ >= 100) { leftPunchState_ = PunchState::kReturn; leftPunchTimer_ = 0; }
+          break;
+      case PunchState::kReturn:
+      {   // ★ エラー対策： { } で囲む！
+          float dx = leftShoulder.x - leftArmPos_.x; float dy = leftShoulder.y - leftArmPos_.y; float dz = leftShoulder.z - leftArmPos_.z;
+          float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist > 0.5f) { leftArmPos_.x += (dx / dist) * 0.5f; leftArmPos_.y += (dy / dist) * 0.5f; leftArmPos_.z += (dz / dist) * 0.5f; } else { leftArmPos_ = leftShoulder; leftPunchState_ = PunchState::kIdle; }
+          break;
+      }
+      case PunchState::kReflected:
+      {   // ★ 追加：弾き返された時のホーミング！
+          Vector3 targetPos = { bossPos_.x, bossPos_.y + 1.0f, bossPos_.z };
+          float dx = targetPos.x - leftArmPos_.x; float dy = targetPos.y - leftArmPos_.y; float dz = targetPos.z - leftArmPos_.z;
+          float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-    Vector3 rightShoulder = { bossPos_.x + 0.5f, bossPos_.y, bossPos_.z };
-    switch (rightPunchState_) {
-    case PunchState::kIdle: rightArmPos_ = rightShoulder; break;
-    case PunchState::kPunch:
-        rightArmPos_.x += rightArmVelocity_.x; rightArmPos_.y += rightArmVelocity_.y; rightArmPos_.z += rightArmVelocity_.z;
-        rightPunchTimer_++;
-        if (rightPunchTimer_ >= 100) { rightPunchState_ = PunchState::kReturn; rightPunchTimer_ = 0; }
-        break;
-    case PunchState::kReturn:
-        float dx = rightShoulder.x - rightArmPos_.x; float dy = rightShoulder.y - rightArmPos_.y; float dz = rightShoulder.z - rightArmPos_.z;
-        float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist > 0.5f) { rightArmPos_.x += (dx / dist) * 0.5f; rightArmPos_.y += (dy / dist) * 0.5f; rightArmPos_.z += (dz / dist) * 0.5f; } else { rightArmPos_ = rightShoulder; rightPunchState_ = PunchState::kIdle; }
-        break;
-    }
+          if (dist > 1.0f) {
+              float reflectSpeed = 1.5f; // パンチの3倍の速度
+              leftArmPos_.x += (dx / dist) * reflectSpeed; leftArmPos_.y += (dy / dist) * reflectSpeed; leftArmPos_.z += (dz / dist) * reflectSpeed;
+          } else {
+              leftPunchState_ = PunchState::kIdle;
+              leftArmPos_ = leftShoulder;
+              stunTimer_ = 180; // ボスをスタンさせる
+              OutputDebugStringA("BOSS STUNNED!!!\n");
+          }
+          break;
+      }
+      }
+
+      Vector3 rightShoulder = { bossPos_.x + 2.5f, bossPos_.y, bossPos_.z };
+      switch (rightPunchState_) {
+      case PunchState::kIdle: rightArmPos_ = rightShoulder; break;
+      case PunchState::kPunch:
+          rightArmPos_.x += rightArmVelocity_.x; rightArmPos_.y += rightArmVelocity_.y; rightArmPos_.z += rightArmVelocity_.z;
+          rightPunchTimer_++;
+          if (rightPunchTimer_ >= 100) { rightPunchState_ = PunchState::kReturn; rightPunchTimer_ = 0; }
+          break;
+      case PunchState::kReturn:
+      {   // ★ エラー対策： { } で囲む！
+          float dx = rightShoulder.x - rightArmPos_.x; float dy = rightShoulder.y - rightArmPos_.y; float dz = rightShoulder.z - rightArmPos_.z;
+          float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist > 0.5f) { rightArmPos_.x += (dx / dist) * 0.5f; rightArmPos_.y += (dy / dist) * 0.5f; rightArmPos_.z += (dz / dist) * 0.5f; } else { rightArmPos_ = rightShoulder; rightPunchState_ = PunchState::kIdle; }
+          break;
+      }
+      case PunchState::kReflected:
+      {   // ★ 追加：弾き返された時のホーミング！
+          Vector3 targetPos = { bossPos_.x, bossPos_.y + 1.0f, bossPos_.z };
+          float dx = targetPos.x - rightArmPos_.x; float dy = targetPos.y - rightArmPos_.y; float dz = targetPos.z - rightArmPos_.z;
+          float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+          if (dist > 1.0f) {
+              float reflectSpeed = 1.5f;
+              rightArmPos_.x += (dx / dist) * reflectSpeed; rightArmPos_.y += (dy / dist) * reflectSpeed; rightArmPos_.z += (dz / dist) * reflectSpeed;
+          } else {
+              rightPunchState_ = PunchState::kIdle;
+              rightArmPos_ = rightShoulder;
+              stunTimer_ = 180;
+              OutputDebugStringA("BOSS STUNNED!!!\n");
+          }
+          break;
+      }
+      }
 
     // ==========================================
     // 全形態共通：大技（ジャンプ＆衝撃波）の処理
@@ -420,7 +505,7 @@ void Boss::Update(Player* player) {
             } else {
                 // 3Dオブジェクトに座標をセットして更新
                 missiles_[i]->SetTranslate(missilePos_[i]);
-                missiles_[i]->SetScale({ 0.5f, 0.5f, 0.5f }); // 弾のサイズ
+                missiles_[i]->SetScale({ 0.2f, 0.2f, 0.2f }); // 弾のサイズ
                 missiles_[i]->SetRotate({ angleX, angleY, 0.0f });
                 missiles_[i]->Update();
             }
@@ -441,6 +526,8 @@ void Boss::Update(Player* player) {
 }
 
 void Boss::Draw() {
+
+    if (isDead_) { return; }
     if (objectBody_) { objectBody_->Draw(); }
 
     // ★ 修正：第1形態（phase_ == 1）の時だけ腕を描画する！

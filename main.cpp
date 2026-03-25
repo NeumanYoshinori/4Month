@@ -307,7 +307,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Player* player = new Player();
 	player->Initialize(object3dCommon);
 	// playerにモデルを紐づける
-	player->SetModel("plane.obj");
+	player->SetModel("player.obj");
 	// playerにカメラを紐づける
 	player->SetCamera(camera);
 

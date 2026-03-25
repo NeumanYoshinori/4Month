@@ -10,7 +10,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
 
     // ==========================================
-    // ★ 追加：フィールドの初期化
+    // フィールドの初期化
     // ==========================================
     ModelManager::GetInstance()->LoadModel("field.obj");
 
@@ -37,7 +37,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 void GameScene::Update(Player* player) {
 
     // ==========================================
-    // ★ プレゼン用魔法のキー（本番が終わったら消す！）
+    // プレゼン用魔法のキー（本番が終わったら消す！）
     // ==========================================
     if (boss_) {
         // [8]キー：ボスのHPを残り1にする（次の一撃で第2形態へ）
@@ -83,7 +83,7 @@ void GameScene::Update(Player* player) {
         }
 
         // ==========================================
-        // ★ 追加：当たり判定（ロケットパンチ左腕 vs プレイヤー）
+        // 当たり判定（ロケットパンチ左腕 vs プレイヤー）
         // ==========================================
         if (boss_->IsLeftPunching()) {
             Vector3 pPos = player->GetTranslate();
@@ -101,7 +101,7 @@ void GameScene::Update(Player* player) {
 
             // 当たり判定の大きさ（プレイヤーの半径 + 腕の半径）
             // ※ 腕が大きければ、この数値を 2.0f などに増やします
-            float hitRadius = 1.5f;
+            float hitRadius = 5.0f;
 
             if (distance < hitRadius) {
                 OutputDebugStringA("Hit Left Punch!!!\n");
@@ -109,7 +109,7 @@ void GameScene::Update(Player* player) {
         }
 
         // ==========================================
-        // ★ 追加：当たり判定（ロケットパンチ右腕 vs プレイヤー）
+        // 当たり判定（ロケットパンチ右腕 vs プレイヤー）
         // ==========================================
         if (boss_->IsRightPunching()) {
             Vector3 pPos = player->GetTranslate();
@@ -121,7 +121,7 @@ void GameScene::Update(Player* player) {
             float dz = pCenter.z - armPos.z;
 
             float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-            float hitRadius = 1.5f;
+            float hitRadius = 5.0f;
 
             if (distance < hitRadius) {
                 OutputDebugStringA("Hit Right Punch!!!\n");
@@ -129,7 +129,7 @@ void GameScene::Update(Player* player) {
         }
 
         // ==========================================
-        // ★ 当たり判定（ホーミングミサイル vs プレイヤー）
+        // 当たり判定（ホーミングミサイル vs プレイヤー）
         // ==========================================
         for (int i = 0; i < Boss::kMaxMissiles; i++) {
             // ミサイルが存在している時だけ判定
@@ -143,7 +143,7 @@ void GameScene::Update(Player* player) {
                 float dz = pCenter.z - mPos.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                float hitRadius = 1.0f; // ミサイルの当たり判定の大きさ
+                float hitRadius = 0.2f; // ミサイルの当たり判定の大きさ
 
                 if (distance < hitRadius) {
                     OutputDebugStringA("Hit Missile!!!\n");
@@ -153,7 +153,7 @@ void GameScene::Update(Player* player) {
         }
 
         // ==========================================
-        // ★ 当たり判定（爆発範囲攻撃 vs プレイヤー）
+        // 当たり判定（爆発範囲攻撃 vs プレイヤー）
         // ==========================================
         if (boss_->IsExplosionActive()) {
             Vector3 pPos = player->GetTranslate();
@@ -171,7 +171,7 @@ void GameScene::Update(Player* player) {
             }
         }
         // ==========================================
-        // ★ 追加：当たり判定（プレイヤーの弾 vs ボス）
+        // 当たり判定（プレイヤーの弾 vs ボス）
         // ==========================================
         // プレイヤーから発射されている全ての弾を取得
         const std::list<Player::Bullet*>& bullets = player->GetBullets();
@@ -191,13 +191,62 @@ void GameScene::Update(Player* player) {
             float dz = bPos.z - bossCenter.z;
             float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-            float hitRadius = 2.0f; // ボスの当たり判定
+            float hitRadius = 10.0f; // ボスの当たり判定
 
             if (distance < hitRadius) {
                 OutputDebugStringA("Hit Boss!!! (Player Attack)\n");
 
                 b->isDead = true;   // 弾を消す！
                 boss_->OnDamage();  // ボスのHPを減らす！
+            }
+        }
+
+        // ==========================================
+         // 当たり判定（プレイヤーの弾 vs ボスの腕 ＝ 反射！）
+         // ==========================================
+        for (Player::Bullet* b : bullets) {
+            if (b->isDead) { continue; }
+
+            // チャージ弾（radiusがでかい弾）だけが反射できる仕様にする
+            if (b->radius >= 3.0f) {
+
+                // ---------------------------------
+                // ① 左腕との判定
+                // ---------------------------------
+                if (boss_->IsLeftPunching()) {
+                    Vector3 armPos = boss_->GetLeftArmPos();
+                    float dx = b->position.x - armPos.x;
+                    float dy = b->position.y - armPos.y;
+                    float dz = b->position.z - armPos.z;
+                    float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                    if (dist < 3.0f) {
+                        OutputDebugStringA("Reflect Left Punch!!!\n");
+                        b->isDead = true;
+                        boss_->ReflectLeftPunch();
+                    }
+                }
+
+                // ---------------------------------
+                // ② 右腕との判定
+                // ---------------------------------
+                // ⬇️ IsRightPunching になっていますか？
+                if (boss_->IsRightPunching()) {
+                    // ⬇️ GetRightArmPos になっていますか？
+                    Vector3 armPos = boss_->GetRightArmPos();
+
+                    float dx = b->position.x - armPos.x;
+                    float dy = b->position.y - armPos.y;
+                    float dz = b->position.z - armPos.z;
+                    float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                    if (dist < 3.0f) {
+                        OutputDebugStringA("Reflect Right Punch!!!\n");
+                        b->isDead = true;
+                        // ⬇️ ReflectRightPunch になっていますか？            
+                        boss_->ReflectRightPunch();
+                    }
+                }
             }
         }
 

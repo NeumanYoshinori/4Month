@@ -11,8 +11,8 @@
 #include "Camera.h"
 #include <cmath>
 #include <algorithm>
-#include <list>          // ★ 追加：弾を管理するリスト用
-#include "Object3d.h"    // ★ 追加：弾の3Dモデル用
+#include <list>         
+#include "Object3d.h"   
 
 
 class Object3dCommon;
@@ -36,6 +36,8 @@ public: // メンバ関数
 
 	// 初期化
 	void Initialize(Object3dCommon* object3dCommon);
+
+	~Player();
 
 	// 更新
 	void Update(Input* input);
@@ -63,7 +65,7 @@ public: // メンバ関数
 	void SetCamera(Camera* camera) { camera_ = camera; }
 
 	// ==========================================
-	// ★ 追加：弾（バレット）の仕組み
+	// 弾（バレット）の仕組み
 	// ==========================================
 	struct Bullet {
 		Object3d* object3d = nullptr;
@@ -109,6 +111,8 @@ private:
 	// モデル
 	Model* model_ = nullptr;
 
+	Object3d* object3d_ = nullptr;
+
 	// カメラ
 	Camera* camera_ = nullptr;
 
@@ -122,9 +126,6 @@ private:
 	float cameraDistance = 8.0f; // プレイヤーからカメラまでの距離
 	POINT preMousePos = { 0, 0 };  // 前回のマウス座標
 
-	// ==========================================
-	// ★ 追加：弾の管理用変数
-	// ==========================================
 	std::list<Bullet*> bullets_;
 	int chargeTimer_ = 0;       // 左クリックを長押ししている時間
 	bool isCharging_ = false;   // チャージ中かどうか

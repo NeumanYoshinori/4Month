@@ -11,7 +11,12 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 
 	dxBase_ = object3dCommon_->GetDxBase();
 
-	ModelManager::GetInstance()->LoadModel("cube.obj");
+	ModelManager::GetInstance()->LoadModel("bullet.obj");
+
+	ModelManager::GetInstance()->LoadModel("player.obj");
+
+	object3d_ = new Object3d();
+	object3d_->Initialize(object3dCommon_);
 
 	// 座標変換行列データ作成
 	CreateTransformationMatrixData();
@@ -20,7 +25,7 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	CreateDirectionalLight();
 
 	// Transform変数を作る
-	transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	transform = { {0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 	// デフォルトカメラをセットする
 	camera_ = object3dCommon_->GetDefaultCamera();
@@ -31,7 +36,7 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 void Player::Update(Input* input) {
 
 	// ==========================================
-	// 1. マウスによる視点・向きの操作（★無限回転対応）
+	// 1. マウスによる視点・向きの操作
 	// ==========================================
 	if (camera_) {
 		// 現在のマウス座標を取得
@@ -125,7 +130,7 @@ void Player::Update(Input* input) {
 	}
 
 	// ==========================================
-	// ★ 追加：弾の発射処理（チャージショット対応）
+	// 弾の発射処理
 	// ==========================================
 	// 左クリックが押されているかチェック (0x8000 で押下状態を判定)
 	if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState('M') & 0x8000)) {
@@ -194,39 +199,46 @@ void Player::Update(Input* input) {
 	}
 
 	// ==========================================
-	// 4. 行列の計算とデータ転送（既存の処理）
+	// 4. 行列の計算とデータ転送
 	// ==========================================
-// ★ ここに私たちの仕組みを復活させます！
 	Vector3 drawPos = transform.translate;
 	drawPos.y += 1.0f; // 見た目だけ上に持ち上げる
 
-	// ★ 修正：transform.translate ではなく drawPos を使って描画する！
-	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, drawPos);
-	Matrix4x4 worldViewProjectionMatrix;
-
-	if (camera_) {
-		const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
-		worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
-	} else {
-		worldViewProjectionMatrix = worldMatrix;
+	if (object3d_) {
+		object3d_->SetTranslate(drawPos);
+		object3d_->SetRotate(transform.rotate);
+		object3d_->SetScale(transform.scale);
+		object3d_->SetCamera(camera_); // カメラもセット
+		object3d_->Update();
 	}
 
-	transformationMatrixData->WVP = worldViewProjectionMatrix;
-	transformationMatrixData->World = worldMatrix;
+	// ★ 修正：transform.translate ではなく drawPos を使って描画する！
+	//Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, drawPos);
+	//Matrix4x4 worldViewProjectionMatrix;
+
+	//if (camera_) {
+	//	const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+	//	worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
+	//} else {
+	//	worldViewProjectionMatrix = worldMatrix;
+	//}
+
+	//transformationMatrixData->WVP = worldViewProjectionMatrix;
+	//transformationMatrixData->World = worldMatrix;
 }
 
 void Player::Draw() {
-	// コマンドリストを作成
-	commandList = dxBase_->GetCommandList();
+	//// コマンドリストを作成
+	//commandList = dxBase_->GetCommandList();
 
-	// wvp用のCBufferの場所を設定
-	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-	// 平行光源CBufferの場所を設定
-	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	//// wvp用のCBufferの場所を設定
+	//commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	//// 平行光源CBufferの場所を設定
+	//commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
 	// 3Dモデルが割り当てられていれば描画する
-	if (model_) {
-		model_->Draw();
+	if (object3d_) {
+		object3d_->Draw();
 	}
 
 	// ★ 追加：弾の描画
@@ -235,9 +247,11 @@ void Player::Draw() {
 	}
 }
 
+
 void Player::SetModel(const std::string& filePath) {
-	// モデルを検索
-	model_ = ModelManager::GetInstance()->FindModel(filePath);
+	if (object3d_) {
+		object3d_->SetModel(filePath);
+	}
 }
 
 void Player::CreateTransformationMatrixData() {
@@ -266,42 +280,88 @@ void Player::CreateDirectionalLight() {
 }
 
 // ==========================================
-// ★ 追加：弾を生成して発射する関数
+// 弾を生成して発射する関数
 // ==========================================
 void Player::FireBullet(bool isCharged) {
-	Bullet* b = new Bullet();
-	b->object3d = new Object3d();
-	b->object3d->Initialize(object3dCommon_);
-	b->object3d->SetModel("cube.obj"); // ※とりあえずキューブを弾にします
-	b->object3d->SetCamera(camera_);
+	// ★ b ではなく newBullet に変更！
+	Bullet* newBullet = new Bullet();
+	newBullet->object3d = new Object3d();
+	newBullet->object3d->Initialize(object3dCommon_);
+	newBullet->object3d->SetModel("bullet.obj");
+	newBullet->object3d->SetCamera(camera_);
 
-	// 発射位置（プレイヤーの少し上、胸のあたり）
-	b->position = transform.translate;
-	b->position.y += 1.0f;
+	
+	// 発射位置
+	newBullet->position = transform.translate;
+	newBullet->position.y += 1.0f;
 
-	// 発射方向（カメラの向いている方向＝画面の中央へ飛ばす！）
+	// カメラの向いている方向（基本のベクトル）
 	float pitch = -cameraAngleX;
 	float yaw = transform.rotate.y;
-	Vector3 shootDir;
-	shootDir.x = std::sin(yaw) * std::cos(pitch);
-	shootDir.y = std::sin(pitch);
-	shootDir.z = std::cos(yaw) * std::cos(pitch);
+	Vector3 cameraDir;
+	cameraDir.x = std::sin(yaw) * std::cos(pitch);
+	cameraDir.y = std::sin(pitch);
+	cameraDir.z = std::cos(yaw) * std::cos(pitch);
+
+	// ==========================================
+	// 画面の奥に向かって撃つ！
+	// ==========================================
+	// 1. カメラの現在位置を取得
+	Vector3 cameraPos = camera_->GetTranslate();
+
+	// 2. 画面のど真ん中、ずっと奥（50先）にある「目標点」を計算する
+	float targetDistance = 50.0f;
+	Vector3 targetPoint;
+	targetPoint.x = cameraPos.x + (cameraDir.x * targetDistance);
+	targetPoint.y = cameraPos.y + (cameraDir.y * targetDistance);
+	targetPoint.z = cameraPos.z + (cameraDir.z * targetDistance);
+
+	// 3. プレイヤーの胸（newBullet->position）から、目標点へ向かうベクトルを作る
+	Vector3 realShootDir;
+	realShootDir.x = targetPoint.x - newBullet->position.x;
+	realShootDir.y = targetPoint.y - newBullet->position.y;
+	realShootDir.z = targetPoint.z - newBullet->position.z;
+
+	// 4. そのベクトルの長さを1に揃える（正規化）
+	float length = std::sqrt(realShootDir.x * realShootDir.x + realShootDir.y * realShootDir.y + realShootDir.z * realShootDir.z);
+	if (length > 0.0f) {
+		realShootDir.x /= length;
+		realShootDir.y /= length;
+		realShootDir.z /= length;
+	}
+	// ==========================================
 
 	if (isCharged) {
-		// チャージショット（デカい・速い・寿命長い）
+		// チャージショット（巨大！）
 		float speed = 1.0f;
-		b->radius = 3.0f;
-		b->lifeTimer = 120;
-		b->object3d->SetScale({ 1.5f, 1.5f, 1.5f }); // 見た目もデカく！
-		b->velocity = { shootDir.x * speed, shootDir.y * speed, shootDir.z * speed };
+		newBullet->radius = 3.0f;
+		newBullet->lifeTimer = 120;
+		newBullet->object3d->SetScale({ 1.5f, 1.5f, 1.5f });
+		newBullet->velocity = { realShootDir.x * speed, realShootDir.y * speed, realShootDir.z * speed };
 	} else {
 		// 通常ショット
 		float speed = 0.8f;
-		b->radius = 0.5f;
-		b->lifeTimer = 60;
-		b->object3d->SetScale({ 0.2f, 0.2f, 0.2f });
-		b->velocity = { shootDir.x * speed, shootDir.y * speed, shootDir.z * speed };
+		newBullet->radius = 0.5f;
+		newBullet->lifeTimer = 60;
+		newBullet->object3d->SetScale({ 0.2f, 0.2f, 0.2f });
+		newBullet->velocity = { realShootDir.x * speed, realShootDir.y * speed, realShootDir.z * speed };
 	}
 
-	bullets_.push_back(b);
+	bullets_.push_back(newBullet);
+}
+
+// ==========================================
+// デストラクタｖ
+// ==========================================
+Player::~Player() {
+	// 自機モデルの解放
+	delete object3d_;
+	object3d_ = nullptr;
+
+	// 画面に残っている弾モデルの解放
+	for (Bullet* b : bullets_) {
+		delete b->object3d;
+		delete b;
+	}
+	bullets_.clear();
 }

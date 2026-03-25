@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Object3d.h"
-// ※ #include "Model.h" はもう要りません！
+
 
 class Object3dCommon;
 class Player;
@@ -20,34 +20,56 @@ public:
     Vector3 GetShockwaveScale() const { return shockwaveScale_; }
 
     // ==========================================
-    // ★ 追加：GameSceneにロケットパンチの情報を教える窓口
+    // GameSceneにロケットパンチの情報を教える窓口
     // ==========================================
     // パンチ中（待機状態じゃない）かどうか
     bool IsLeftPunching() const { return leftPunchState_ != PunchState::kIdle; }
     bool IsRightPunching() const { return rightPunchState_ != PunchState::kIdle; }
 
-    // 腕の現在のワールド座標（前回見た目を +1.0f 持ち上げたので、ここでも合わせます）
+  
     Vector3 GetLeftArmPos() const { return leftArmPos_; }
     Vector3 GetRightArmPos() const { return rightArmPos_; }
 
 
     // ==========================================
-    // ★ プレゼン＆進行用のHP・フェーズ管理
+    // プレゼン＆進行用のHP・フェーズ管理
     // ==========================================
-    int hp_ = 50;
+    int hp_ = 10;
     Vector3 GetPos() const { return bossPos_; }
+
+    // ==========================================
+     // ボスの死亡フラグ
+     // ==========================================
+    bool isDead_ = false;
+    bool IsDead() const { return isDead_; }
 
     // ダメージを受けた時の処理
     void OnDamage() {
-        if (hp_ > 0 && !isTransitioning_) {
+        // 死んでいない、かつ演出中でない時だけダメージを受ける
+        if (hp_ > 0 && !isTransitioning_ && !isDead_) {
             hp_ -= 1;
-            if (hp_ <= 0 && phase_ == 1) {
-                isTransitioning_ = true; // 第1形態のHPが0になったら演出開始！
+
+            // HPが0になったら！
+            if (hp_ <= 0) {
+                if (phase_ == 1) {
+                    isTransitioning_ = true; // 第1形態なら形態変化
+                } else if (phase_ == 2) {
+                    isDead_ = true;          // ★ 第2形態なら死亡
+                    OutputDebugStringA("BOSS DEFEATED!!!\n"); // コンソールに撃破メッセージ
+                }
             }
         }
     }
 
-    // ★ プレゼン用チート関数
+
+    void ReflectLeftPunch() { leftPunchState_ = PunchState::kReflected; }
+    void ReflectRightPunch() { rightPunchState_ = PunchState::kReflected; }
+
+    // スタンタイマー（0より大きい時は気絶中）
+    int stunTimer_ = 0;
+
+
+    // チート関数
     void SetHP(int hp) { hp_ = hp; }
     void ForcePhase2() {
         if (phase_ == 1) {
@@ -58,14 +80,14 @@ public:
 
 
     // ==========================================
-    // ★ 追加：第2形態ホーミングミサイル用
+    // 第2形態ホーミングミサイル用
     // ==========================================
-    static const int kMaxMissiles = 2; // 左右の肩から1発ずつ（計2発）
+    static const int kMaxMissiles = 4; // 左右の肩から1発ずつ（計2発）
     bool IsMissileActive(int index) const { return isMissileActive_[index]; }
     Vector3 GetMissilePos(int index) const { return missilePos_[index]; }
 
     // ==========================================
-    // ★ 追加：第2形態 吸引＆爆発攻撃用
+    // 第2形態 吸引＆爆発攻撃用
     // ==========================================
     bool IsExplosionActive() const { return isExplosionActive_; }
     Vector3 GetExplosionScale() const { return explosionScale_; }
@@ -82,7 +104,7 @@ private:
 
 
     // ==========================================
-    // ★ボスのパラメータ
+    // ボスのパラメータ
     // ==========================================
     // ボスの基本座標（常にここを基準にする）
     Vector3 bossPos_ = { 0.0f, 0.0f, 10.0f };
@@ -91,7 +113,8 @@ private:
     enum class PunchState {
         kIdle,   // 待機
         kPunch,  // 飛んでる
-        kReturn  // 戻ってる
+        kReturn,  // 戻ってる
+        kReflected // プレイヤーに弾き返された状態！
     };
 
     // 右腕の現在の状態
@@ -114,17 +137,17 @@ private:
 
 
     // ==========================================
-    // ★ 追加：ジャンプ攻撃用のパラメータ
+    // ジャンプ攻撃用のパラメータ
     // ==========================================   
     bool isMovingToEdge_ = false;
     bool isJumping_ = false;  // ジャンプ中かどうか
     float velocityY_ = 0.0f;  // Y軸の速度（プラスなら上昇、マイナスなら落下）
     bool isReturningToCenter_ = false;
 
-    // ★ 追加：第2形態の連続ジャンプ用
+    // 第2形態の連続ジャンプ用
     int jumpCount_ = 0; // 今何回ジャンプしたか
     // ==========================================
-    // ★ 追加：衝撃波用のパラメータ
+    // 衝撃波用のパラメータ
     // ==========================================
     Object3d* shockwave_ = nullptr;
     bool isShockwaveActive_ = false; // 衝撃波が出ているか
@@ -134,7 +157,7 @@ private:
 
 
     // ==========================================
-    // ★ フェーズ（形態）管理用パラメータ
+    // フェーズ（形態）管理用パラメータ
     // ==========================================
     int phase_ = 1;                // 現在の形態（1 or 2）
     bool isTransitioning_ = false; // 形態変化の演出中か
@@ -142,7 +165,7 @@ private:
 
 
     // ==========================================
-    // ★ 追加：第2形態ホーミングミサイル用
+    // 第2形態ホーミングミサイル用
     // ==========================================
     Object3d* missiles_[kMaxMissiles] = { nullptr, nullptr };
     bool isMissileActive_[kMaxMissiles] = { false, false };
@@ -152,7 +175,7 @@ private:
     
 
     // ==========================================
-    // ★ 追加：第2形態 吸引＆爆発攻撃用
+    // 第2形態 吸引＆爆発攻撃用
     // ==========================================
     bool isSuctionActive_ = false;                  // 吸引中かどうか
     Object3d* explosion_ = nullptr;                 // 爆発の3Dモデル
