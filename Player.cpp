@@ -121,6 +121,50 @@ void Player::Update(Input* input) {
 			isGrounded = false;
 		}
 	}
+
+	// ==========================================
+	// ★ 追加：弾の発射処理（チャージショット対応）
+	// ==========================================
+	// 左クリックが押されているかチェック (0x8000 で押下状態を判定)
+	if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+		isCharging_ = true;
+		chargeTimer_++;
+	} else {
+		// 左クリックを離した瞬間
+		if (isCharging_) {
+			// 180フレーム（約3秒）以上溜めていたらチャージショット！
+			FireBullet(chargeTimer_ >= 180);
+			isCharging_ = false;
+			chargeTimer_ = 0;
+		}
+	}
+
+	// 弾の更新（移動と寿命管理）
+	for (auto it = bullets_.begin(); it != bullets_.end(); ) {
+		Bullet* b = *it;
+		b->lifeTimer--;
+
+		// 寿命が尽きたか、ボスに当たって消滅フラグが立ったら削除
+		if (b->lifeTimer <= 0 || b->isDead) {
+			delete b->object3d;
+			delete b;
+			it = bullets_.erase(it);
+			continue;
+		}
+
+		// 弾を前へ飛ばす
+		b->position.x += b->velocity.x;
+		b->position.y += b->velocity.y;
+		b->position.z += b->velocity.z;
+
+		// 3Dモデルに座標を適用
+		b->object3d->SetTranslate(b->position);
+		b->object3d->Update();
+
+		++it;
+	}
+	// ==========================================
+	
 	// ==========================================
 	// 3. カメラの配置（プレイヤーを中央に捉える）
 	// ==========================================
@@ -182,6 +226,11 @@ void Player::Draw() {
 	if (model_) {
 		model_->Draw();
 	}
+
+	// ★ 追加：弾の描画
+	for (Bullet* b : bullets_) {
+		b->object3d->Draw();
+	}
 }
 
 void Player::SetModel(const std::string& filePath) {
@@ -212,4 +261,45 @@ void Player::CreateDirectionalLight() {
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intensity = 1.0f;
+}
+
+// ==========================================
+// ★ 追加：弾を生成して発射する関数
+// ==========================================
+void Player::FireBullet(bool isCharged) {
+	Bullet* b = new Bullet();
+	b->object3d = new Object3d();
+	b->object3d->Initialize(object3dCommon_);
+	b->object3d->SetModel("cube.obj"); // ※とりあえずキューブを弾にします
+	b->object3d->SetCamera(camera_);
+
+	// 発射位置（プレイヤーの少し上、胸のあたり）
+	b->position = transform.translate;
+	b->position.y += 1.0f;
+
+	// 発射方向（カメラの向いている方向＝画面の中央へ飛ばす！）
+	float pitch = -cameraAngleX;
+	float yaw = transform.rotate.y;
+	Vector3 shootDir;
+	shootDir.x = std::sin(yaw) * std::cos(pitch);
+	shootDir.y = std::sin(pitch);
+	shootDir.z = std::cos(yaw) * std::cos(pitch);
+
+	if (isCharged) {
+		// チャージショット（デカい・速い・寿命長い）
+		float speed = 1.0f;
+		b->radius = 3.0f;
+		b->lifeTimer = 120;
+		b->object3d->SetScale({ 1.5f, 1.5f, 1.5f }); // 見た目もデカく！
+		b->velocity = { shootDir.x * speed, shootDir.y * speed, shootDir.z * speed };
+	} else {
+		// 通常ショット
+		float speed = 0.8f;
+		b->radius = 0.5f;
+		b->lifeTimer = 60;
+		b->object3d->SetScale({ 0.2f, 0.2f, 0.2f });
+		b->velocity = { shootDir.x * speed, shootDir.y * speed, shootDir.z * speed };
+	}
+
+	bullets_.push_back(b);
 }

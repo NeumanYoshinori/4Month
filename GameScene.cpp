@@ -170,6 +170,37 @@ void GameScene::Update(Player* player) {
                 OutputDebugStringA("Hit Explosion!!! (AoE)\n");
             }
         }
+        // ==========================================
+        // ★ 追加：当たり判定（プレイヤーの弾 vs ボス）
+        // ==========================================
+        // プレイヤーから発射されている全ての弾を取得
+        const std::list<Player::Bullet*>& bullets = player->GetBullets();
+
+        for (Player::Bullet* b : bullets) {
+            // すでに当たって消える予定の弾は無視
+            if (b->isDead) {
+                continue;
+            }
+
+            Vector3 bPos = b->position;
+            Vector3 bossPos = boss_->GetPos();
+            Vector3 bossCenter = { bossPos.x, bossPos.y + 1.0f, bossPos.z }; // ボスの胸を狙う
+
+            float dx = bPos.x - bossCenter.x;
+            float dy = bPos.y - bossCenter.y;
+            float dz = bPos.z - bossCenter.z;
+            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+            float hitRadius = 2.0f; // ボスの当たり判定
+
+            if (distance < hitRadius) {
+                OutputDebugStringA("Hit Boss!!! (Player Attack)\n");
+
+                b->isDead = true;   // 弾を消す！
+                boss_->OnDamage();  // ボスのHPを減らす！
+            }
+        }
+
     }
 
 }
