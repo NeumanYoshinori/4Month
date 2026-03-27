@@ -6,9 +6,6 @@
 #include <cassert>
 #include <dbghelp.h>
 #include <strsafe.h>
-#include "externals/imgui/imgui.h"
-#include "externals/imgui/imgui_impl_dx12.h"
-#include "externals/imgui/imgui_impl_win32.h"
 #include <vector>
 #include <wrl.h>
 #include <xaudio2.h>
@@ -28,6 +25,7 @@
 #include "ParticleEmitter.h"
 #include "Player.h"
 #include "GameScene.h"
+#include "ImGuiManager.h"
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxcompiler.lib")
@@ -210,7 +208,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3DResourceLeakChecker leakCheck;
 	ComPtr<IDXGIFactory7> dcgiFactory;
 
-	CoInitializeEx(0, COINIT_MULTITHREADED);
 	// 誰も補足しなかった場合に(Unhandled)、補足する関数を登録
 	SetUnhandledExceptionFilter(ExportDump);
 
@@ -252,7 +249,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	SrvManager* srvManager = nullptr;
 	// SRVマネージャの初期化
-	srvManager = new SrvManager();
+	srvManager = SrvManager::GetInstance();
 	srvManager->Initialize(dxBase);
 
 	// テクスチャマネジャー
@@ -329,6 +326,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	particleTransform.translate = { 0.0f, 0.0f, 0.0f };
 	ParticleEmitter* particleEmitter = new ParticleEmitter("circle", particleTransform, 30, 1.0f);
 
+	ImGuiManager* imGuiManager = new ImGuiManager();
+	imGuiManager->Initialize(winApp, dxBase);
+
 	Transform uvTransformSprite{
 		{ 1.0f, 1.0f, 1.0f },
 		{ 0.0f, 0.0f, 0.0f },
@@ -361,9 +361,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// パーティクルが動くか
 	uint32_t canUpdate = false;
 
-	// コマンドリストを生成する
-	ComPtr<ID3D12GraphicsCommandList> commandList = dxBase->GetCommandList();
-
 	Vector3 rotation = { 0.0f, 0.0f, 0.0f };
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -373,14 +370,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			// ゲームループを抜ける
 			break;
 		}
-
-		// ゲームの処理
-		//ImGui_ImplDX12_NewFrame();
-		//ImGui_ImplWin32_NewFrame();
-		//ImGui::NewFrame();
-
-		//// 開発用UIの処理
-		//ImGui::ShowDemoWindow();
 
 		// キー入力の更新
 		input->Update();
@@ -403,9 +392,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		// 開発用UIの処理
 		//ImGui::ShowDemoWindow();
+		imGuiManager->Begin();
 
-		// ImGuiの内部コマンドを生成する
-		//ImGui::Render();
+#ifdef USE_IMGUI
+		// デモウィンドウの表示オン
+		ImGui::ShowDemoWindow();
+
+		ImGui::Begin("Settings");
+		ImGui::End();
+#endif
+
+		imGuiManager->End();
 
 		// 描画前処理
 		dxBase->PreDraw();
@@ -431,8 +428,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 共通描画設定
 		spriteCommon->DrawSetting();
 
-		// 実際のcommandListのImGuiの描画コマンドを積む
-		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
+		imGuiManager->Draw();
 
 		// 描画後処理
 		dxBase->PostDraw();
@@ -444,13 +440,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	CloseHandle(dxBase->GetFenceEvent());
-
-	// WindowsAPIの終了処理
-	winApp->Finalize();
-
-	// WindowsAPI解放
-	delete winApp;
-	winApp = nullptr;
 
 	// キー入力処理解放
 	delete input;
@@ -485,7 +474,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	modelManager->Finalize();
 
 	// SRVマネージャの解放
-	delete srvManager;
+	srvManager->Finalize();
+
+	// ImGuiマネージャの終了処理
+	imGuiManager->Finalize();
+
+	// ImGuiマネージャの解放
+	delete imGuiManager;
+	imGuiManager = nullptr;
+
+	// WindowsAPIの終了処理
+	winApp->Finalize();
+
+	// WindowsAPI解放
+	delete winApp;
+	winApp = nullptr;
 
 	// DirectX解放
 	delete dxBase;
@@ -494,11 +497,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	xAudio2.Reset();
 	// 音声データ解放
 	SoundUnload(&soundData1);
-
-	// ImGuiの終了処理
-	/*ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();*/
 
 	return 0;
 }
