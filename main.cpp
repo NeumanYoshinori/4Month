@@ -27,6 +27,7 @@
 #include "ParticleManager.h"
 #include "ParticleEmitter.h"
 #include "Player.h"
+#include "GameScene.h"
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxcompiler.lib")
@@ -289,27 +290,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ModelManager::GetInstance()->LoadModel("cube.obj");
 
 	// 3dオブジェクトの初期化
-	Object3d* field = new Object3d();
-	field->Initialize(object3dCommon);
+	//Object3d* field = new Object3d();
+	//field->Initialize(object3dCommon);
 
-	// 初期化済みの3Dオブジェクトにモデルを紐づける
-	field->SetModel("field.obj");
-	field->SetRotate({ 85.0f, 0.0f, 0.0f });
-	field->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	//// 初期化済みの3Dオブジェクトにモデルを紐づける
+	//field->SetModel("field.obj");
+	//field->SetRotate({ 85.0f, 0.0f, 0.0f });
+	//field->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
 	// カメラの初期化
 	Camera* camera = new Camera();
 	camera->SetRotate({ 0.3f, 0.0f, 0.0f });
 	camera->SetTranslate({ 0.0f, 10.0f, -30.0f });
-	field->SetCamera(camera);
+	//field->SetCamera(camera);
 
 	// player
 	Player* player = new Player();
 	player->Initialize(object3dCommon);
 	// playerにモデルを紐づける
-	player->SetModel("plane.obj");
+	player->SetModel("player.obj");
 	// playerにカメラを紐づける
 	player->SetCamera(camera);
+
+
+	// ==========================================
+	// ★ 追加：GameScene（ボスと背景の管理者）を作る
+	// ==========================================
+	GameScene* gameScene = new GameScene();
+	gameScene->Initialize(object3dCommon, camera);
+
 
 	// パーティクルマネージャ
 	ParticleManager* particleManager = ParticleManager::GetInstance();
@@ -388,8 +397,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//rotation.x += 0.01f;
 		// フィールドの更新
-		field->Update();
+		//field->Update();
 		//field->SetRotate(rotation);
+
+		gameScene->Update(player);
 
 		// 開発用UIの処理
 		//ImGui::ShowDemoWindow();
@@ -414,7 +425,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//particleManager->Draw();
 		// 3Dオブジェクトの描画
-		field->Draw();
+		//field->Draw();
+
+		gameScene->Draw();
 
 		// 共通描画設定
 		spriteCommon->DrawSetting();
@@ -447,13 +460,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete spriteCommon;
 
 	// フィールドの解放
-	delete field;
+//	delete field;
 
 	// playerの解放
 	delete player;
 
 	// カメラの解放
 	delete camera;
+
+	delete gameScene;
 
 	// パーティクルエミッターの解放
 	delete particleEmitter;

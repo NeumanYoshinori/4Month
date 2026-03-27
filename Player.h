@@ -11,8 +11,9 @@
 #include "Camera.h"
 #include <cmath>
 #include <algorithm>
-#include <list>
-#include "Object3d.h"
+#include <list>         
+#include "Object3d.h"   
+
 
 class Object3dCommon;
 class Input;
@@ -44,6 +45,8 @@ public: // メンバ関数
 	// 初期化
 	void Initialize(Object3dCommon* object3dCommon);
 
+	~Player();
+
 	// 更新
 	void Update(Input* input);
 
@@ -69,7 +72,20 @@ public: // メンバ関数
 	// setter
 	void SetCamera(Camera* camera) { camera_ = camera; }
 
-	void FireBullet(float speed, float scale, int lifeTime);
+	// ==========================================
+	// 弾（バレット）の仕組み
+	// ==========================================
+	struct Bullet {
+		Object3d* object3d = nullptr;
+		Vector3 position;
+		Vector3 velocity;
+		float radius;      // 当たり判定の大きさ
+		int lifeTimer;     // 寿命（消えるまでの時間）
+		bool isDead = false;
+	};
+
+	const std::list<Bullet*>& GetBullets() const { return bullets_; }
+	void FireBullet(bool isCharged); // 弾を発射する関数
 
 private:
 	// 座標変換行列データ作成
@@ -103,6 +119,8 @@ private:
 	// モデル
 	Model* model_ = nullptr;
 
+	Object3d* object3d_ = nullptr;
+
 	// カメラ
 	Camera* camera_ = nullptr;
 
@@ -116,8 +134,8 @@ private:
 	float cameraDistance = 8.0f; // プレイヤーからカメラまでの距離
 	POINT preMousePos = { 0, 0 };  // 前回のマウス座標
 
-	int chargeTimer = 0;        // 溜めている時間（フレーム数）
-	bool prevLButton = false;   // 1フレーム前に左クリックを押していたか
 	std::list<Bullet*> bullets_;
-};
+	int chargeTimer_ = 0;       // 左クリックを長押ししている時間
+	bool isCharging_ = false;   // チャージ中かどうか
 
+};
