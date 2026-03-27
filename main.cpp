@@ -23,6 +23,8 @@
 #include "SrvManager.h"
 #include "ParticleManager.h"
 #include "ParticleEmitter.h"
+#include "Player.h"
+#include "GameScene.h"
 #include "ImGuiManager.h"
 
 #pragma comment(lib, "Dbghelp.lib")
@@ -284,19 +286,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ModelManager::GetInstance()->LoadModel("field.obj");
 
 	// 3dオブジェクトの初期化
-	Object3d* field = new Object3d();
-	field->Initialize(object3dCommon);
+	//Object3d* field = new Object3d();
+	//field->Initialize(object3dCommon);
 
-	// 初期化済みの3Dオブジェクトにモデルを紐づける
-	field->SetModel("field.obj");
-	field->SetRotate({ 85.0f, 0.0f, 0.0f });
-	field->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	//// 初期化済みの3Dオブジェクトにモデルを紐づける
+	//field->SetModel("field.obj");
+	//field->SetRotate({ 85.0f, 0.0f, 0.0f });
+	//field->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
 	// カメラの初期化
 	Camera* camera = new Camera();
 	camera->SetRotate({ 0.3f, 0.0f, 0.0f });
 	camera->SetTranslate({ 0.0f, 10.0f, -30.0f });
-	field->SetCamera(camera);
+	//field->SetCamera(camera);
+
+	// player
+	Player* player = new Player();
+	player->Initialize(object3dCommon);
+	// playerにモデルを紐づける
+	player->SetModel("player.obj");
+	// playerにカメラを紐づける
+	player->SetCamera(camera);
+
+
+	// ==========================================
+	// ★ 追加：GameScene（ボスと背景の管理者）を作る
+	// ==========================================
+	GameScene* gameScene = new GameScene();
+	gameScene->Initialize(object3dCommon, camera);
+
+
+	// パーティクルマネージャ
+	ParticleManager* particleManager = ParticleManager::GetInstance();
+	particleManager->Initialize(dxBase, srvManager, camera);
+
+	particleManager->CreateParticleGroup("circle", "resources/circle.png");
+
+	Transform particleTransform;
+	particleTransform.translate = { 0.0f, 0.0f, 0.0f };
+	ParticleEmitter* particleEmitter = new ParticleEmitter("circle", particleTransform, 30, 1.0f);
 
 	ImGuiManager* imGuiManager = new ImGuiManager();
 	imGuiManager->Initialize(winApp, dxBase);
@@ -345,6 +373,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		// キー入力の更新
 		input->Update();
+		player->Update(input);
 
 		// 0キーを押したときコンソールにHit 0と表示する
 		if (input->ReleaseKey(DIK_0)) {
@@ -356,9 +385,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//rotation.x += 0.01f;
 		// フィールドの更新
-		field->Update();
+		//field->Update();
 		//field->SetRotate(rotation);
 
+		gameScene->Update(player);
+
+		// 開発用UIの処理
+		//ImGui::ShowDemoWindow();
 		imGuiManager->Begin();
 
 #ifdef USE_IMGUI
@@ -379,8 +412,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 3Dオブジェクトの描画準備。3Dオブジェクトの描画に共通のグラフィックスコマンドを積む
 		object3dCommon->DrawSetting();
 
+		for (uint32_t i = 0; i < 2; i++) {
+			// 3Dオブジェクトの描画
+			//object3d[i]->Draw();
+		}
+
+		player->Draw();
+
+		//particleManager->Draw();
 		// 3Dオブジェクトの描画
-		field->Draw();
+		//field->Draw();
+
+		gameScene->Draw();
 
 		// 共通描画設定
 		spriteCommon->DrawSetting();
@@ -405,7 +448,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete spriteCommon;
 
 	// フィールドの解放
-	delete field;
+//	delete field;
+
+	// playerの解放
+	delete player;
+
+	// カメラの解放
+	delete camera;
+
+	delete gameScene;
+
+	// パーティクルエミッターの解放
+	delete particleEmitter;
+
+	// パーティクルマネージャの終了
+	particleManager->Finalize();
 
 	// 3dオブジェクト共通部の解放
 	delete object3dCommon;

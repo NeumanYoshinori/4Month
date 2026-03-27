@@ -1,0 +1,133 @@
+#pragma once
+#include <string>
+#include <vector>
+#include <MathFunction.h>
+#include <Transform.h>
+#include <wrl.h>
+#include <d3d12.h>
+#include "DirectXBase.h"
+#include "Model.h"
+#include "ModelManager.h"
+#include "Camera.h"
+#include <cmath>
+#include <algorithm>
+#include <list>         
+#include "Object3d.h"   
+
+
+class Object3dCommon;
+class Input;
+
+// 3Dオブジェクト
+class Player {
+public: // メンバ関数
+	// 座標変換用行列
+	struct TransformationMatrix {
+		Matrix4x4 WVP;
+		Matrix4x4 World;
+	};
+
+	// 平行光源
+	struct DirectionalLight {
+		Vector4 color;
+		Vector3 direction;
+		float intensity;
+	};
+
+	// 初期化
+	void Initialize(Object3dCommon* object3dCommon);
+
+	~Player();
+
+	// 更新
+	void Update(Input* input);
+
+	// 描画
+	void Draw();
+
+	// setter
+	void SetModel(Model* model) { model_ = model; }
+
+	// setter
+	void SetScale(const Vector3& scale) { transform.scale = scale; }
+	void SetRotate(const Vector3& rotate) { transform.rotate = rotate; }
+	void SetTranslate(const Vector3& translate) { transform.translate = translate; }
+
+	// getter
+	const Vector3& GetScale() const { return transform.scale; }
+	const Vector3& GetRotate() const { return transform.rotate; }
+	const Vector3& GetTranslate() const { return transform.translate; }
+
+	// setter
+	void SetModel(const std::string& filePath);
+
+	// setter
+	void SetCamera(Camera* camera) { camera_ = camera; }
+
+	// ==========================================
+	// 弾（バレット）の仕組み
+	// ==========================================
+	struct Bullet {
+		Object3d* object3d = nullptr;
+		Vector3 position;
+		Vector3 velocity;
+		float radius;      // 当たり判定の大きさ
+		int lifeTimer;     // 寿命（消えるまでの時間）
+		bool isDead = false;
+	};
+
+	const std::list<Bullet*>& GetBullets() const { return bullets_; }
+	void FireBullet(bool isCharged); // 弾を発射する関数
+
+private:
+	// 座標変換行列データ作成
+	void CreateTransformationMatrixData();
+
+	// 平行光源データ作成
+	void CreateDirectionalLight();
+
+	// Object3DCommonのポインタ
+	Object3dCommon* object3dCommon_ = nullptr;
+
+	// DirectXBase
+	DirectXBase* dxBase_ = nullptr;
+
+	// バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = nullptr; // 座標返還行列リソース
+	// バッファリソース内のデータを指すポインタ
+	TransformationMatrix* transformationMatrixData = nullptr;
+
+	// バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = nullptr;
+	// バッファリソース内のデータを指すポインタ
+	DirectionalLight* directionalLightData = nullptr;
+
+	// Transform
+	Transform transform;
+
+	// コマンドリスト
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList = nullptr;
+
+	// モデル
+	Model* model_ = nullptr;
+
+	Object3d* object3d_ = nullptr;
+
+	// カメラ
+	Camera* camera_ = nullptr;
+
+	float velocityY = 0.0f;   // Y軸方向の速度（落下やジャンプ）
+	float gravity = 0.01f;    // 重力の強さ（毎フレーム下に向かって加速する量）
+	float jumpSpeed = 0.2f;   // ジャンプの初速（ジャンプ力）
+	bool isGrounded = false;  // 地面についているかどうかのフラグ
+
+	float cameraAngleX = 0.2f;   // 上下の角度（ピッチ）
+	float cameraYawOffset = 0.0f;   // 左右の角度（ヨー）
+	float cameraDistance = 8.0f; // プレイヤーからカメラまでの距離
+	POINT preMousePos = { 0, 0 };  // 前回のマウス座標
+
+	std::list<Bullet*> bullets_;
+	int chargeTimer_ = 0;       // 左クリックを長押ししている時間
+	bool isCharging_ = false;   // チャージ中かどうか
+
+};
