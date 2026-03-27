@@ -258,6 +258,40 @@ void Boss::Update(Player* player) {
             }
         }
 
+        //時差ミサイルにする場合
+        //// メインの時計(attackTimer_)が 10 になったら、独立タイマーのスイッチを「ON(1)」にする！
+        //if (attackTimer_ == 10 && !isMovingToEdge_ && !isJumping_ && !isShockwaveActive_ && !isReturningToCenter_) {
+        //    missileSequenceTimer_ = 1;
+        //}
+
+        //// 独立タイマーが動いている間は、ボスがジャンプ中だろうと関係なく進み続ける！
+        //if (missileSequenceTimer_ > 0) {
+        //    missileSequenceTimer_++; // 専用時計の針を進める
+
+        //    for (int i = 0; i < kMaxMissiles; i++) {
+        //        // 発射タイミング（タイマーが 2, 22, 42, 62... になったら発射）
+        //        int fireTime = 2 + (i * 20);
+
+        //        // ★ attackTimer_ ではなく missileSequenceTimer_ で判定する！
+        //        if (missileSequenceTimer_ == fireTime) {
+        //            isMissileActive_[i] = true;
+        //            missileHomingTimer_[i] = 75;
+
+        //            float direction = (i % 2 == 0) ? -1.0f : 1.0f;
+        //            float spread = 3.0f + (i / 2) * 1.5f;
+        //            float offsetX = direction * spread;
+
+        //            missilePos_[i] = { bossPos_.x + offsetX, bossPos_.y + 3.0f, bossPos_.z };
+        //            missileVelocity_[i] = { direction * 0.3f, 0.4f, -0.1f };
+        //        }
+        //    }
+
+        //    // 全部撃ち終わる十分な時間が経ったら、スイッチを「OFF(0)」に戻す
+        //    if (missileSequenceTimer_ > 100) {
+        //        missileSequenceTimer_ = 0;
+        //    }
+        //}
+
         // 攻撃1：連続ジャンプ衝撃波（3連続）
         if (attackTimer_ == 60 && !isMovingToEdge_ && !isJumping_ && !isShockwaveActive_ && !isReturningToCenter_) {
             isMovingToEdge_ = true;

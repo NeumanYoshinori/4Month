@@ -35,6 +35,18 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 
 void Player::Update(Input* input) {
 
+
+	// 無敵タイマーを毎フレーム減らす
+	if (invincibilityTimer_ > 0) {
+		invincibilityTimer_--;
+	}
+
+	// もし死んでいたら、この先の操作や更新を一切やらない（＝ゲームオーバーで操作不能になる）
+	if (isDead_) {
+		return;
+	}
+
+
 	// ==========================================
 	// 1. マウスによる視点・向きの操作
 	// ==========================================
@@ -227,20 +239,17 @@ void Player::Update(Input* input) {
 }
 
 void Player::Draw() {
-	//// コマンドリストを作成
-	//commandList = dxBase_->GetCommandList();
-
-	//// wvp用のCBufferの場所を設定
-	//commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-	//// 平行光源CBufferの場所を設定
-	//commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-
-	// 3Dモデルが割り当てられていれば描画する
-	if (object3d_) {
-		object3d_->Draw();
+	// ★ 修正：死んでいない時だけ自機を描画する！
+	if (!isDead_) {
+		// 無敵時間中はチカチカ点滅させる（4フレームごとに表示/非表示を切り替え）
+		if (invincibilityTimer_ == 0 || invincibilityTimer_ % 4 >= 2) {
+			if (object3d_) {
+				object3d_->Draw();
+			}
+		}
 	}
 
-	// 弾の描画
+	// 弾は、自機が死んでいても画面に残って飛んでいくように別で描画
 	for (Bullet* b : bullets_) {
 		b->object3d->Draw();
 	}
@@ -348,6 +357,28 @@ void Player::FireBullet(bool isCharged) {
 
 	bullets_.push_back(newBullet);
 }
+
+
+// ==========================================
+// 自機がダメージを受けた時の処理
+// ==========================================
+void Player::OnDamage() {
+	// すでに死んでいるか、無敵時間中なら何もしない（ノーダメージ）
+	if (isDead_ || invincibilityTimer_ > 0) { return; }
+
+	hp_ -= 1;                    // HPを1減らす
+	invincibilityTimer_ = 60;    // 60フレーム（約1秒）無敵にする！
+
+	OutputDebugStringA("Player Took Damage!!!\n");
+
+	// HPが0になったら死亡！
+	if (hp_ <= 0) {
+		hp_ = 0;
+		isDead_ = true;
+		OutputDebugStringA("PLAYER DEAD!!! GAME OVER\n");
+	}
+}
+
 
 // ==========================================
 // デストラクタｖ

@@ -54,6 +54,7 @@ void GameScene::Update(Player* player) {
 
     if (GetAsyncKeyState('R') & 0x8000) {
         PostQuitMessage(0); // ゲーム（ウィンドウ）を終了させる命令
+        PostMessage(GetActiveWindow(), WM_CLOSE, 0, 0);
     }
 
 
@@ -83,6 +84,7 @@ void GameScene::Update(Player* player) {
             if (isHitZ && isHitY) {
                 // コンソールに文字を出す！
                 OutputDebugStringA("Hit Shockwave!!!\n");
+                player->OnDamage();
             }
         }
 
@@ -105,10 +107,11 @@ void GameScene::Update(Player* player) {
 
             // 当たり判定の大きさ（プレイヤーの半径 + 腕の半径）
             // ※ 腕が大きければ、この数値を 2.0f などに増やします
-            float hitRadius = 5.0f;
+            float hitRadius = 2.0f;
 
             if (distance < hitRadius) {
                 OutputDebugStringA("Hit Left Punch!!!\n");
+                player->OnDamage();
             }
         }
 
@@ -125,10 +128,11 @@ void GameScene::Update(Player* player) {
             float dz = pCenter.z - armPos.z;
 
             float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-            float hitRadius = 5.0f;
+            float hitRadius = 2.0f;
 
             if (distance < hitRadius) {
                 OutputDebugStringA("Hit Right Punch!!!\n");
+                player->OnDamage();
             }
         }
 
@@ -147,11 +151,13 @@ void GameScene::Update(Player* player) {
                 float dz = pCenter.z - mPos.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                float hitRadius = 0.2f; // ミサイルの当たり判定の大きさ
+                float hitRadius = 1.4f; // ミサイルの当たり判定の大きさ
 
                 if (distance < hitRadius) {
                     OutputDebugStringA("Hit Missile!!!\n");
-                    // ※ ここでミサイルを消す場合は boss_ に「ミサイルを消す関数」を追加して呼びます
+                    player->OnDamage();
+                    
+                    boss_->DeactivateMissile(i);
                 }
             }
         }
@@ -172,6 +178,7 @@ void GameScene::Update(Player* player) {
             // プレイヤーが爆発のスケール（半径）の内側にいたらヒット！
             if (distance < expScale.x) {
                 OutputDebugStringA("Hit Explosion!!! (AoE)\n");
+                player->OnDamage();
             }
         }
         // ==========================================
@@ -253,6 +260,8 @@ void GameScene::Update(Player* player) {
                 }
             }
         }
+
+
 
     }
 

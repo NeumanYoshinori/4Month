@@ -85,6 +85,8 @@ public:
     static const int kMaxMissiles = 4; // 左右の肩から1発ずつ（計2発）
     bool IsMissileActive(int index) const { return isMissileActive_[index]; }
     Vector3 GetMissilePos(int index) const { return missilePos_[index]; }
+    void DeactivateMissile(int index) { isMissileActive_[index] = false; }
+    int missileSequenceTimer_ = 0;
 
     // ==========================================
     // 第2形態 吸引＆爆発攻撃用
