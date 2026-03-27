@@ -54,7 +54,7 @@ public:
                 if (phase_ == 1) {
                     isTransitioning_ = true; // 第1形態なら形態変化
                 } else if (phase_ == 2) {
-                    isDead_ = true;          // ★ 第2形態なら死亡
+                    isDead_ = true;          // 第2形態なら死亡
                     OutputDebugStringA("BOSS DEFEATED!!!\n"); // コンソールに撃破メッセージ
                 }
             }
@@ -120,14 +120,14 @@ private:
     // 右腕の現在の状態
     PunchState rightPunchState_ = PunchState::kIdle;
 
-    // ★ 追加：右腕の現在のワールド座標と、寿命タイマー
+    // 右腕の現在のワールド座標と、寿命タイマー
     Vector3 rightArmPos_ = { 0.0f, 0.0f, 0.0f };
     int rightPunchTimer_ = 0;
     Vector3 rightArmVelocity_ = { 0.0f, 0.0f, 0.0f };
 
     //左腕の場合
     PunchState leftPunchState_ = PunchState::kIdle;
-    // ★ 追加：左腕の現在のワールド座標と、寿命タイマー
+    // 左腕の現在のワールド座標と、寿命タイマー
     Vector3 leftArmPos_ = { 0.0f, 0.0f, 0.0f };
     int leftPunchTimer_ = 0;
     Vector3 leftArmVelocity_ = { 0.0f, 0.0f, 0.0f };

@@ -1,9 +1,9 @@
 #include "Boss.h"
 #include "Object3dCommon.h"
-#include "ModelManager.h" // ★これを超重要追加！
+#include "ModelManager.h" // これを超重要追加！
 #include "Camera.h"
-#include "Player.h" // ★ 追加：プレイヤーの情報を読み込む！
-#include <cmath>    // ★ 追加：三平方の定理のルート計算に必要！
+#include "Player.h" // プレイヤーの情報を読み込む！
+#include <cmath>    // 三平方の定理のルート計算に必要！
 
 
 // 引数から ModelCommon を消してスッキリさせました
@@ -45,7 +45,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
      // 4. サイズと初期位置の設定
      // ==========================================
      // ① サイズを小さくする（0.1倍など、ちょうどいいサイズを探します）
-    Vector3 bossScale = { 0.5f, 0.5f, 0.5f }; // ★ここを 0.5f や 0.05f などに変えて調整
+    Vector3 bossScale = { 0.5f, 0.5f, 0.5f }; // ここを 0.5f や 0.05f などに変えて調整
     objectBody_->SetScale(bossScale);
     objectLeftArm_->SetScale(bossScale);
     objectRightArm_->SetScale(bossScale);
@@ -96,7 +96,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
    
 
     // ==========================================
-    // 7. ★追加：ミサイルの準備
+    // 7. ミサイルの準備
     // ==========================================
     // ※とりあえず既存の plane.obj を使いますが、後で missile.obj などに変えられます！
     ModelManager::GetInstance()->LoadModel("missile.obj");
@@ -109,7 +109,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     }
 
     // ==========================================
-    // 8. ★ 追加：爆発（範囲攻撃）の準備
+    // 8.　爆発（範囲攻撃）の準備
     // ==========================================
     ModelManager::GetInstance()->LoadModel("explosion.obj");
 
@@ -151,7 +151,7 @@ void Boss::Update(Player* player) {
 
         objectLeftArm_->SetTranslate(leftPos);
         objectLeftArm_->SetRotate({ 0.0f, currentYaw, 0.0f });
-        objectLeftArm_->Update(); // ★ 超重要：腕のUpdateを呼ぶ！
+        objectLeftArm_->Update(); // 腕のUpdateを呼ぶ
 
         // 右腕の計算（左腕の反対側）
         Vector3 rightPos;
@@ -161,7 +161,7 @@ void Boss::Update(Player* player) {
 
         objectRightArm_->SetTranslate(rightPos);
         objectRightArm_->SetRotate({ 0.0f, currentYaw, 0.0f });
-        objectRightArm_->Update(); // ★ 超重要：腕のUpdateを呼ぶ！
+        objectRightArm_->Update(); // 腕のUpdateを呼ぶ
 
         // 更新が終わったのでここでスキップ
         return;
@@ -182,7 +182,7 @@ void Boss::Update(Player* player) {
         // 120フレーム（2秒）経ったら第2形態スタート！
         if (transitionTimer_ >= 120) {
             phase_ = 2;              // 第2形態へ！
-            hp_ = 10;               // ★ 第2形態のHP！
+            hp_ = 10;               // 第2形態のHP！
             attackTimer_ = 0;        // 攻撃タイマーリセット
             isTransitioning_ = false;// 演出終了
             jumpCount_ = 0;          // ジャンプ回数リセット
@@ -310,7 +310,7 @@ void Boss::Update(Player* player) {
             // 最大サイズ（15.0f）まで広がったら終了
             if (explosionScale_.x > 7.5f) {
                 isExplosionActive_ = false;
-                // ★ タイマーを -100 にリセットし、再び「ミサイル → ジャンプ」のループへ戻る！
+                // ★ タイマーを -100 にリセットし、再び「ミサイル → ジャンプ」のループへ戻る
                 attackTimer_ = -100;
             }
 
@@ -332,14 +332,14 @@ void Boss::Update(Player* player) {
           if (leftPunchTimer_ >= 100) { leftPunchState_ = PunchState::kReturn; leftPunchTimer_ = 0; }
           break;
       case PunchState::kReturn:
-      {   // ★ エラー対策： { } で囲む！
+      {   
           float dx = leftShoulder.x - leftArmPos_.x; float dy = leftShoulder.y - leftArmPos_.y; float dz = leftShoulder.z - leftArmPos_.z;
           float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
           if (dist > 0.5f) { leftArmPos_.x += (dx / dist) * 0.5f; leftArmPos_.y += (dy / dist) * 0.5f; leftArmPos_.z += (dz / dist) * 0.5f; } else { leftArmPos_ = leftShoulder; leftPunchState_ = PunchState::kIdle; }
           break;
       }
       case PunchState::kReflected:
-      {   // ★ 追加：弾き返された時のホーミング！
+      {   // 弾き返された時のホーミング
           Vector3 targetPos = { bossPos_.x, bossPos_.y + 1.0f, bossPos_.z };
           float dx = targetPos.x - leftArmPos_.x; float dy = targetPos.y - leftArmPos_.y; float dz = targetPos.z - leftArmPos_.z;
           float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
@@ -366,14 +366,14 @@ void Boss::Update(Player* player) {
           if (rightPunchTimer_ >= 100) { rightPunchState_ = PunchState::kReturn; rightPunchTimer_ = 0; }
           break;
       case PunchState::kReturn:
-      {   // ★ エラー対策： { } で囲む！
+      {   
           float dx = rightShoulder.x - rightArmPos_.x; float dy = rightShoulder.y - rightArmPos_.y; float dz = rightShoulder.z - rightArmPos_.z;
           float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
           if (dist > 0.5f) { rightArmPos_.x += (dx / dist) * 0.5f; rightArmPos_.y += (dy / dist) * 0.5f; rightArmPos_.z += (dz / dist) * 0.5f; } else { rightArmPos_ = rightShoulder; rightPunchState_ = PunchState::kIdle; }
           break;
       }
       case PunchState::kReflected:
-      {   // ★ 追加：弾き返された時のホーミング！
+      {   // 弾き返された時のホーミング
           Vector3 targetPos = { bossPos_.x, bossPos_.y + 1.0f, bossPos_.z };
           float dx = targetPos.x - rightArmPos_.x; float dy = targetPos.y - rightArmPos_.y; float dz = targetPos.z - rightArmPos_.z;
           float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
@@ -454,7 +454,7 @@ void Boss::Update(Player* player) {
     }
 
     // ==========================================
-    // ★ 追加：ミサイルの移動とホーミング処理
+    // ミサイルの移動とホーミング処理
     // ==========================================
     for (int i = 0; i < kMaxMissiles; i++) {
         if (isMissileActive_[i]) {
@@ -476,7 +476,7 @@ void Boss::Update(Player* player) {
                         float speed = 0.2f; // ミサイルの最高速度
                         Vector3 desiredVel = { (dx / distance) * speed, (dy / distance) * speed, (dz / distance) * speed };
 
-                        // ★ プロの技：「今の速度」と「行きたい方向」を混ぜることで、美しいカーブを描く！
+                       
                         missileVelocity_[i].x = (missileVelocity_[i].x * 0.95f) + (desiredVel.x * 0.05f);
                         missileVelocity_[i].y = (missileVelocity_[i].y * 0.95f) + (desiredVel.y * 0.05f);
                         missileVelocity_[i].z = (missileVelocity_[i].z * 0.95f) + (desiredVel.z * 0.05f);
@@ -491,7 +491,7 @@ void Boss::Update(Player* player) {
             missilePos_[i].y += missileVelocity_[i].y;
             missilePos_[i].z += missileVelocity_[i].z;
 
-            // 2. ★追加：進行方向を向かせるための回転計算
+            // 2.進行方向を向かせるための回転計算
             // atan2(x, z) で、XZ平面上の進んでいる角度を求めます
             float angleY = std::atan2(missileVelocity_[i].x, missileVelocity_[i].z);
 
@@ -530,7 +530,7 @@ void Boss::Draw() {
     if (isDead_) { return; }
     if (objectBody_) { objectBody_->Draw(); }
 
-    // ★ 修正：第1形態（phase_ == 1）の時だけ腕を描画する！
+  
     if (phase_ == 1) {
         if (objectLeftArm_) { objectLeftArm_->Draw(); }
         if (objectRightArm_) { objectRightArm_->Draw(); }
@@ -557,7 +557,7 @@ Boss::~Boss() {
     delete objectRightArm_;
     delete shockwave_;
 
-    // ★ 追加：ミサイルのメモリを解放する
+
     for (int i = 0; i < kMaxMissiles; i++) {
         delete missiles_[i];
     }

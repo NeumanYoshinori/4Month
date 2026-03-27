@@ -390,6 +390,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		gameScene->Update(player);
 
+
+
 		// 開発用UIの処理
 		//ImGui::ShowDemoWindow();
 		imGuiManager->Begin();

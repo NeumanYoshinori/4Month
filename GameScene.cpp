@@ -45,11 +45,15 @@ void GameScene::Update(Player* player) {
             boss_->SetHP(1);
             OutputDebugStringA("Cheat: Boss HP set to 1 !!\n");
         }
-        // [9]キー：ボスのHPを0にして、強制的に演出～第2形態をスタート！
+        // [9]キー：ボスのHPを0にして、強制的に演出～第2形態をスタート
         if (GetAsyncKeyState('9') & 0x8000) {
             boss_->ForcePhase2();
             OutputDebugStringA("Cheat: Forced Phase 2 !!\n");
         }
+    }
+
+    if (GetAsyncKeyState('R') & 0x8000) {
+        PostQuitMessage(0); // ゲーム（ウィンドウ）を終了させる命令
     }
 
 

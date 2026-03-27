@@ -43,9 +43,8 @@ void Player::Update(Input* input) {
 		POINT currentMousePos;
 		GetCursorPos(&currentMousePos);
 
-		// ★画面の中心座標
-		// ※ご自身のゲーム画面の解像度に合わせて変更してください
-		// 例：1280x720のウィンドウなら 640 と 360 にします
+		// 画面の中心座標
+	
 		int centerX = 1280 / 2;
 		int centerY = 720 / 2;
 
@@ -212,7 +211,7 @@ void Player::Update(Input* input) {
 		object3d_->Update();
 	}
 
-	// ★ 修正：transform.translate ではなく drawPos を使って描画する！
+	// transform.translate ではなく drawPos を使って描画する
 	//Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, drawPos);
 	//Matrix4x4 worldViewProjectionMatrix;
 
@@ -241,7 +240,7 @@ void Player::Draw() {
 		object3d_->Draw();
 	}
 
-	// ★ 追加：弾の描画
+	// 弾の描画
 	for (Bullet* b : bullets_) {
 		b->object3d->Draw();
 	}
@@ -283,7 +282,7 @@ void Player::CreateDirectionalLight() {
 // 弾を生成して発射する関数
 // ==========================================
 void Player::FireBullet(bool isCharged) {
-	// ★ b ではなく newBullet に変更！
+	
 	Bullet* newBullet = new Bullet();
 	newBullet->object3d = new Object3d();
 	newBullet->object3d->Initialize(object3dCommon_);
