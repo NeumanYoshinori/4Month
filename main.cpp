@@ -206,7 +206,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3DResourceLeakChecker leakCheck;
 	ComPtr<IDXGIFactory7> dcgiFactory;
 
-	CoInitializeEx(0, COINIT_MULTITHREADED);
 	// 誰も補足しなかった場合に(Unhandled)、補足する関数を登録
 	SetUnhandledExceptionFilter(ExportDump);
 
@@ -334,9 +333,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// パーティクルが動くか
 	uint32_t canUpdate = false;
 
-	// コマンドリストを生成する
-	ComPtr<ID3D12GraphicsCommandList> commandList = dxBase->GetCommandList();
-
 	Vector3 rotation = { 0.0f, 0.0f, 0.0f };
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -402,13 +398,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	CloseHandle(dxBase->GetFenceEvent());
 
-	// WindowsAPIの終了処理
-	winApp->Finalize();
-
-	// WindowsAPI解放
-	delete winApp;
-	winApp = nullptr;
-
 	// キー入力処理解放
 	delete input;
 
@@ -436,6 +425,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ImGuiマネージャの解放
 	delete imGuiManager;
 	imGuiManager = nullptr;
+
+	// WindowsAPIの終了処理
+	winApp->Finalize();
+
+	// WindowsAPI解放
+	delete winApp;
+	winApp = nullptr;
 
 	// DirectX解放
 	delete dxBase;
