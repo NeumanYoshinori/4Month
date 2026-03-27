@@ -129,6 +129,23 @@ void Player::Update(Input* input) {
 		}
 	}
 
+	// 1. 無敵時間のカウントダウン
+	if (isInvincible_) {
+		invincibleTimer_--;
+		if (invincibleTimer_ <= 0) {
+			isInvincible_ = false;
+		}
+	}
+
+	// 2. 死亡判定
+	if (hp_ <= 0) {
+		isDead_ = true;
+		// 必要に応じてここで「死亡アニメーション」などを再生
+		OutputDebugStringA("PLAYER DEAD\n");
+	}
+
+	if (isDead_) return;
+
 	// ==========================================
 	// 弾の発射処理
 	// ==========================================
@@ -236,6 +253,13 @@ void Player::Draw() {
 	//// 平行光源CBufferの場所を設定
 	//commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
+	if (isInvincible_) {
+		// 4フレームに1回だけ消える演出
+		if (invincibleTimer_ % 8 < 4) {
+			return;
+		}
+	}
+
 	// 3Dモデルが割り当てられていれば描画する
 	if (object3d_) {
 		object3d_->Draw();
@@ -244,10 +268,6 @@ void Player::Draw() {
 	// ★ 追加：弾の描画
 	for (Bullet* b : bullets_) {
 		b->object3d->Draw();
-	}
-
-	for (auto bullet : bullets_) {
-		bullet->obj->Draw();
 	}
 }
 
@@ -294,7 +314,6 @@ void Player::FireBullet(bool isCharged) {
 	newBullet->object3d->SetModel("bullet.obj");
 	newBullet->object3d->SetCamera(camera_);
 
-	
 	// 発射位置
 	newBullet->position = transform.translate;
 	newBullet->position.y += 1.0f;

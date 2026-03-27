@@ -392,6 +392,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			OutputDebugStringA("Hit 0\n");
 		}
 
+		if (input->TriggerKey(DIK_ESCAPE)) { // または PushKey(DIK_ESCAPE)
+			break; // ループを抜けて終了処理へ向かう
+		}
 		// カメラの更新
 		camera->Update();
 

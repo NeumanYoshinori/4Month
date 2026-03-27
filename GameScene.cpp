@@ -79,6 +79,7 @@ void GameScene::Update(Player* player) {
             if (isHitZ && isHitY) {
                 // コンソールに文字を出す！
                 OutputDebugStringA("Hit Shockwave!!!\n");
+                player->OnDamage();
             }
         }
 
@@ -105,6 +106,7 @@ void GameScene::Update(Player* player) {
 
             if (distance < hitRadius) {
                 OutputDebugStringA("Hit Left Punch!!!\n");
+                player->OnDamage();
             }
         }
 
@@ -125,6 +127,7 @@ void GameScene::Update(Player* player) {
 
             if (distance < hitRadius) {
                 OutputDebugStringA("Hit Right Punch!!!\n");
+                player->OnDamage();
             }
         }
 
@@ -147,6 +150,7 @@ void GameScene::Update(Player* player) {
 
                 if (distance < hitRadius) {
                     OutputDebugStringA("Hit Missile!!!\n");
+                    player->OnDamage();
                     // ※ ここでミサイルを消す場合は boss_ に「ミサイルを消す関数」を追加して呼びます
                 }
             }
@@ -168,6 +172,7 @@ void GameScene::Update(Player* player) {
             // プレイヤーが爆発のスケール（半径）の内側にいたらヒット！
             if (distance < expScale.x) {
                 OutputDebugStringA("Hit Explosion!!! (AoE)\n");
+                player->OnDamage();
             }
         }
         // ==========================================

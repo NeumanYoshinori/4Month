@@ -34,14 +34,6 @@ public: // メンバ関数
 		float intensity;
 	};
 
-	struct Bullet {
-		Object3d* obj = nullptr;        // 弾の3Dモデル（キューブ）
-		Vector3 position; // 現在の座標
-		Vector3 velocity; // 飛んでいく方向とスピード
-		int lifeTimer = 0;              // 弾が消えるまでの寿命
-		bool isDead = false;            // 死んだかどうかのフラグ
-	};
-
 	// 初期化
 	void Initialize(Object3dCommon* object3dCommon);
 
@@ -138,4 +130,22 @@ private:
 	int chargeTimer_ = 0;       // 左クリックを長押ししている時間
 	bool isCharging_ = false;   // チャージ中かどうか
 
+
+	public:
+		void OnDamage(int damage = 1) {
+			if (isInvincible_) return; // 無敵時間中なら無視
+
+			hp_ -= damage;
+			if (hp_ < 0) hp_ = 0;
+
+			// ダメージを受けた後の無敵タイマーなどをセットするとよりゲームらしくなります
+			isInvincible_ = true;
+			invincibleTimer_ = 60; // 1秒間無敵など
+		}
+
+	private:
+		int hp_ = 10;
+		bool isInvincible_ = false;
+		int invincibleTimer_ = 0;
+		bool isDead_ = false; // プレイヤー自身の死亡フラグ
 };
