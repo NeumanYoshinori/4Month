@@ -32,6 +32,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
         // ※ModelCommonは一旦 nullptr で渡しておきます
         boss_->Initialize(object3dCommon_, camera);
     }
+
 }
 
 void GameScene::Update(Player* player) {

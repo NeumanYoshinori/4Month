@@ -24,4 +24,5 @@ private:
    
     ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
+
 };

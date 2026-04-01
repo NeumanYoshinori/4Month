@@ -94,6 +94,10 @@ public:
     bool IsExplosionActive() const { return isExplosionActive_; }
     Vector3 GetExplosionScale() const { return explosionScale_; }
 
+
+
+
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 
@@ -164,6 +168,11 @@ private:
     int phase_ = 1;                // 現在の形態（1 or 2）
     bool isTransitioning_ = false; // 形態変化の演出中か
     int transitionTimer_ = 0;      // 演出タイマー
+
+    bool isAppearing_ = true;      // 最初は「登場中」からスタートさせる！
+    int appearanceTimer_ = 0;      // 登場演出用のタイマー
+
+    int fallDelayTimer_ = 0;
 
 
     // ==========================================

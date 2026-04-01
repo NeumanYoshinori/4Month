@@ -52,14 +52,14 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
     // ② カメラから少し離れた位置（奥）に置く
     // 今カメラが Z: -10.0f にいるので、ボスを Z: 10.0f くらいに置くと全体が見えやすいです
-    Vector3 bossPos = { 0.0f,-1.57f, 10.0f };
+    bossPos_ = { 0.0f,150.0f, 10.0f };
     objectBody_->SetTranslate(bossPos_);
     objectLeftArm_->SetTranslate({ bossPos_.x - 0.5f, bossPos_.y, bossPos_.z });
     objectRightArm_->SetTranslate({ bossPos_.x + 0.5f, bossPos_.y, bossPos_.z });
     // ==========================================
     // 5. 向き（回転）の設定
     // ==============================,============
-    // { X軸の回転, Y軸の回転, Z軸の回転 } です。
+    // { X軸の回転, Y軸の回転, Z軸の回転 } です。6
     // コマみたいに横を向かせたい（旋回させたい）場合は、真ん中の「Y」の値をいじります。
 
     // 例：180度回して反対を向かせる
@@ -168,9 +168,50 @@ void Boss::Update(Player* player) {
     }
 
     // ==========================================
+    // ★ 追加：登場演出（ゲーム開始直後）
+    // ==========================================
+    if (isAppearing_) {
+
+        // ⬇️ ★ 追加：まずは指定した時間（例：120フレーム ＝ 約2秒）だけ上空で待機する！
+        if (fallDelayTimer_ < 120) {
+            fallDelayTimer_++;
+        }
+        // 待機時間が終わったら、いよいよ落下開始！
+        else {
+            // 1. 猛スピードで落下
+            if (bossPos_.y > 0.0f) {
+                bossPos_.y -= 2.0f; // 落下スピード（速い！）
+
+                // 地面に激突した瞬間！
+                if (bossPos_.y <= 0.0f) {
+                    bossPos_.y = 0.0f;
+
+                    // ドスーン！と着地衝撃波を出す
+                    isShockwaveActive_ = true;
+                    shockwaveScale_ = { 15.0f, 0.1f, 1.5f };
+                    shockwavePos_ = { bossPos_.x, 0.01f, bossPos_.z };
+
+                    OutputDebugStringA("BOSS LANDED!!!\n");
+                }
+            }
+            // 2. 着地後、少しの間ドヤ顔で待機（タイマーを進める）
+            else {
+                appearanceTimer_++;
+
+                // 90フレーム（1.5秒）待ったら、いよいよ戦闘開始！
+                if (appearanceTimer_ >= 90) {
+                    isAppearing_ = false; // 登場状態を解除
+                    attackTimer_ = 0;     // 攻撃タイマーを0からスタート！
+                    OutputDebugStringA("BATTLE START!!!\n");
+                }
+            }
+        }
+    }
+
+    // ==========================================
     // ① 形態変化（第1 → 第2）の演出中！
     // ==========================================
-    if (isTransitioning_) {
+    else if (isTransitioning_) {
         transitionTimer_++;
 
         // 腕を強制的に定位置に戻して待機
@@ -462,14 +503,15 @@ void Boss::Update(Player* player) {
 
         if (shockwavePos_.z < -20.0f) {
             isShockwaveActive_ = false;
-
-            if (phase_ == 2 && jumpCount_ < 3) {
-                // 第2形態：まだ3回ジャンプしてなければ次を飛ぶ！
-                isJumping_ = true;
-                velocityY_ = 0.4f; // 2回目以降は少し低いジャンプ
-            } else {
-                // 終了して定位置に戻る
-                isReturningToCenter_ = true;
+            if (!isAppearing_) {
+                if (phase_ == 2 && jumpCount_ < 3) {
+                    // 第2形態：まだ3回ジャンプしてなければ次を飛ぶ！
+                    isJumping_ = true;
+                    velocityY_ = 0.4f; // 2回目以降は少し低いジャンプ
+                } else {
+                    // 終了して定位置に戻る
+                    isReturningToCenter_ = true;
+                }
             }
         }
 
