@@ -21,7 +21,7 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	// 座標変換行列データ作成
 	CreateTransformationMatrixData();
 
-	// 平行光源データ作成
+	// 平行光源データ作成5r
 	CreateDirectionalLight();
 
 	// Transform変数を作る
@@ -30,7 +30,10 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	// デフォルトカメラをセットする
 	camera_ = object3dCommon_->GetDefaultCamera();
 
-	GetCursorPos(&preMousePos);
+	int centerX = 1280 / 2;
+	int centerY = 720 / 2;
+	// ゲーム開始前に、カーソルを強制的に画面の中央にセットしておく
+	SetCursorPos(centerX, centerY);
 }
 
 void Player::Update(Input* input) {
@@ -50,7 +53,7 @@ void Player::Update(Input* input) {
 	// ==========================================
 	// 1. マウスによる視点・向きの操作
 	// ==========================================
-	if (camera_) {
+	if (camera_ && !isCinematic_) {
 		// 現在のマウス座標を取得
 		POINT currentMousePos;
 		GetCursorPos(&currentMousePos);
@@ -186,8 +189,8 @@ void Player::Update(Input* input) {
 	// ==========================================
 	// 3. カメラの配置（プレイヤーを中央に捉える）
 	// ==========================================
-	if (camera_) {
-		float cameraDistance = 15.0f; // プレイヤーからカメラまでの距離
+	if (camera_ && !isCinematic_) {
+		float cameraDistance = 15.0f;
 
 		// 注視点をプレイヤーの中央（頭の高さなど）に設定する
 		Vector3 targetPos = transform.translate;

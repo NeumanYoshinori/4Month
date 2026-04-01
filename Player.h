@@ -90,6 +90,9 @@ public: // メンバ関数
 	bool IsDead() const { return isDead_; } // 外から死んでいるか確認する用
 	void OnDamage();                        // ダメージを受けた時に呼ぶ関数
 
+	bool isCinematic_ = false;
+	void SetCinematic(bool isCinematic) { isCinematic_ = isCinematic; }
+
 private:
 	// 座標変換行列データ作成
 	void CreateTransformationMatrixData();

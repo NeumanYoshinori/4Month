@@ -43,19 +43,33 @@ public:
     bool isDead_ = false;
     bool IsDead() const { return isDead_; }
 
+    bool isDying_ = false;
+    int deathTimer_ = 0;
+    bool IsDying() const { return isDying_; }
+    int GetDeathTimer() const { return deathTimer_; }
+
     // ダメージを受けた時の処理
     void OnDamage() {
-        // 死んでいない、かつ演出中でない時だけダメージを受ける
-        if (hp_ > 0 && !isTransitioning_ && !isDead_) {
+        if (hp_ > 0 && !isTransitioning_ && !isDead_ && !isDying_) {
             hp_ -= 1;
 
-            // HPが0になったら！
             if (hp_ <= 0) {
                 if (phase_ == 1) {
-                    isTransitioning_ = true; // 第1形態なら形態変化
+                    isTransitioning_ = true;
                 } else if (phase_ == 2) {
-                    isDead_ = true;          // 第2形態なら死亡
-                    OutputDebugStringA("BOSS DEFEATED!!!\n"); // コンソールに撃破メッセージ
+                    isDying_ = true;
+                    deathTimer_ = 0;
+
+                    // ⬇️ ★ 追加：すべての攻撃をその場で強制終了させる（お片付け）
+                    leftPunchState_ = PunchState::kIdle;
+                    rightPunchState_ = PunchState::kIdle;
+                    isShockwaveActive_ = false;
+                    isExplosionActive_ = false;
+                    for (int i = 0; i < kMaxMissiles; i++) {
+                        isMissileActive_[i] = false; // ミサイルを全消去
+                    }
+
+                    OutputDebugStringA("BOSS DYING START (Attacks Cleared)!!!\n");
                 }
             }
         }
@@ -95,7 +109,9 @@ public:
     Vector3 GetExplosionScale() const { return explosionScale_; }
 
 
-
+    bool isAppearing_ = true;      // 最初は「登場中」からスタートさせる！r
+    int fallDelayTimer_ = 0;
+    int GetAppearanceTimer() const { return appearanceTimer_; }
 
 
 private:
@@ -169,10 +185,10 @@ private:
     bool isTransitioning_ = false; // 形態変化の演出中か
     int transitionTimer_ = 0;      // 演出タイマー
 
-    bool isAppearing_ = true;      // 最初は「登場中」からスタートさせる！
+ 
     int appearanceTimer_ = 0;      // 登場演出用のタイマー
 
-    int fallDelayTimer_ = 0;
+   
 
 
     // ==========================================

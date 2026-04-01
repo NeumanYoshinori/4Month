@@ -8,6 +8,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // 受け取ったポインタをメンバ変数に保存
     object3dCommon_ = object3dCommon;
 
+    camera_ = camera;
 
     // ==========================================
     // フィールドの初期化
@@ -69,204 +70,246 @@ void GameScene::Update(Player* player) {
     }
 
     if (player && boss_) {
-        if (boss_->IsShockwaveActive()) {
-            // それぞれの座標を取得
-            Vector3 pPos = player->GetTranslate();
-            Vector3 wavePos = boss_->GetShockwavePos();
-            Vector3 waveScale = boss_->GetShockwaveScale();
 
-            // Z座標（奥行き）の距離を測る
-            float diffZ = std::abs(pPos.z - wavePos.z);
+        // =======================================================
+        // ⬇️ ★ 新規追加：ここに「大きなフタ」をする！
+        // 登場中（isAppearing_）でも、やられ中（IsDying）でもない時だけ判定！
+        // =======================================================
+        if (!boss_->isAppearing_ && !boss_->IsDying()) {
 
-            // Zが重なっていて(厚みの中に入っていて)、かつY(高さ)が波より低いか
-            bool isHitZ = (diffZ < waveScale.z);
-            bool isHitY = (pPos.y < waveScale.y);
-
-            if (isHitZ && isHitY) {
-                // コンソールに文字を出す！
-                OutputDebugStringA("Hit Shockwave!!!\n");
-                player->OnDamage();
-            }
-        }
-
-        // ==========================================
-        // 当たり判定（ロケットパンチ左腕 vs プレイヤー）
-        // ==========================================
-        if (boss_->IsLeftPunching()) {
-            Vector3 pPos = player->GetTranslate();
-            // プレイヤーの中心点を計算（足元 Y=0.0f から 1.0f 上げたお腹のあたり）
-            Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
-            Vector3 armPos = boss_->GetLeftArmPos(); // 腕の中心点
-
-            // X, Y, Z のそれぞれの距離の差を求める
-            float dx = pCenter.x - armPos.x;
-            float dy = pCenter.y - armPos.y;
-            float dz = pCenter.z - armPos.z;
-
-            // 3Dの距離を計算（三平方の定理：ルート(x^2 + y^2 + z^2)）
-            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-
-            // 当たり判定の大きさ（プレイヤーの半径 + 腕の半径）
-            // ※ 腕が大きければ、この数値を 2.0f などに増やします
-            float hitRadius = 2.0f;
-
-            if (distance < hitRadius) {
-                OutputDebugStringA("Hit Left Punch!!!\n");
-                player->OnDamage();
-            }
-        }
-
-        // ==========================================
-        // 当たり判定（ロケットパンチ右腕 vs プレイヤー）
-        // ==========================================
-        if (boss_->IsRightPunching()) {
-            Vector3 pPos = player->GetTranslate();
-            Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
-            Vector3 armPos = boss_->GetRightArmPos();
-
-            float dx = pCenter.x - armPos.x;
-            float dy = pCenter.y - armPos.y;
-            float dz = pCenter.z - armPos.z;
-
-            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-            float hitRadius = 2.0f;
-
-            if (distance < hitRadius) {
-                OutputDebugStringA("Hit Right Punch!!!\n");
-                player->OnDamage();
-            }
-        }
-
-        // ==========================================
-        // 当たり判定（ホーミングミサイル vs プレイヤー）
-        // ==========================================
-        for (int i = 0; i < Boss::kMaxMissiles; i++) {
-            // ミサイルが存在している時だけ判定
-            if (boss_->IsMissileActive(i)) {
+            if (boss_->IsShockwaveActive()) {
                 Vector3 pPos = player->GetTranslate();
-                Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z }; // プレイヤーの中心
-                Vector3 mPos = boss_->GetMissilePos(i);              // ミサイルの位置
+                Vector3 wavePos = boss_->GetShockwavePos();
+                Vector3 waveScale = boss_->GetShockwaveScale();
 
-                float dx = pCenter.x - mPos.x;
-                float dy = pCenter.y - mPos.y;
-                float dz = pCenter.z - mPos.z;
+                float diffZ = std::abs(pPos.z - wavePos.z);
+                bool isHitZ = (diffZ < waveScale.z);
+                bool isHitY = (pPos.y < waveScale.y);
+
+                if (isHitZ && isHitY) {
+                    OutputDebugStringA("Hit Shockwave!!!\n");
+                    player->OnDamage();
+                }
+            }
+
+            // ==========================================
+            // 当たり判定（ロケットパンチ左腕 vs プレイヤー）
+            // ==========================================
+            if (boss_->IsLeftPunching()) {
+                Vector3 pPos = player->GetTranslate();
+                Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
+                Vector3 armPos = boss_->GetLeftArmPos();
+                float dx = pCenter.x - armPos.x; float dy = pCenter.y - armPos.y; float dz = pCenter.z - armPos.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                float hitRadius = 1.4f; // ミサイルの当たり判定の大きさ
-
-                if (distance < hitRadius) {
-                    OutputDebugStringA("Hit Missile!!!\n");
+                if (distance < 2.0f) {
+                    OutputDebugStringA("Hit Left Punch!!!\n");
                     player->OnDamage();
-                    
-                    boss_->DeactivateMissile(i);
                 }
             }
-        }
 
-        // ==========================================
-        // 当たり判定（爆発範囲攻撃 vs プレイヤー）
-        // ==========================================
-        if (boss_->IsExplosionActive()) {
-            Vector3 pPos = player->GetTranslate();
-            Vector3 bPos = boss_->GetPos(); // 爆発の中心（ボスの位置）
-            Vector3 expScale = boss_->GetExplosionScale();
+            // ==========================================
+            // 当たり判定（ロケットパンチ右腕 vs プレイヤー）
+            // ==========================================
+            if (boss_->IsRightPunching()) {
+                Vector3 pPos = player->GetTranslate();
+                Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
+                Vector3 armPos = boss_->GetRightArmPos();
+                float dx = pCenter.x - armPos.x; float dy = pCenter.y - armPos.y; float dz = pCenter.z - armPos.z;
+                float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-            // ZとXの距離（平面での距離）を測る
-            float dx = pPos.x - bPos.x;
-            float dz = pPos.z - bPos.z;
-            float distance = std::sqrt(dx * dx + dz * dz);
-
-            // プレイヤーが爆発のスケール（半径）の内側にいたらヒット！
-            if (distance < expScale.x) {
-                OutputDebugStringA("Hit Explosion!!! (AoE)\n");
-                player->OnDamage();
-            }
-        }
-        // ==========================================
-        // 当たり判定（プレイヤーの弾 vs ボス）
-        // ==========================================
-        // プレイヤーから発射されている全ての弾を取得
-        const std::list<Player::Bullet*>& bullets = player->GetBullets();
-
-        for (Player::Bullet* b : bullets) {
-            // すでに当たって消える予定の弾は無視
-            if (b->isDead) {
-                continue;
-            }
-
-            Vector3 bPos = b->position;
-            Vector3 bossPos = boss_->GetPos();
-            Vector3 bossCenter = { bossPos.x, bossPos.y + 1.0f, bossPos.z }; // ボスの胸を狙う
-
-            float dx = bPos.x - bossCenter.x;
-            float dy = bPos.y - bossCenter.y;
-            float dz = bPos.z - bossCenter.z;
-            float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-
-            float hitRadius = 10.0f; // ボスの当たり判定
-
-            if (distance < hitRadius) {
-                OutputDebugStringA("Hit Boss!!! (Player Attack)\n");
-
-                b->isDead = true;   // 弾を消す！
-                boss_->OnDamage();  // ボスのHPを減らす！
-            }
-        }
-
-        // ==========================================
-         // 当たり判定（プレイヤーの弾 vs ボスの腕 ＝ 反射！）
-         // ==========================================
-        for (Player::Bullet* b : bullets) {
-            if (b->isDead) { continue; }
-
-            // チャージ弾（radiusがでかい弾）だけが反射できる仕様にする
-            if (b->radius >= 3.0f) {
-
-                // ---------------------------------
-                // ① 左腕との判定
-                // ---------------------------------
-                if (boss_->IsLeftPunching()) {
-                    Vector3 armPos = boss_->GetLeftArmPos();
-                    float dx = b->position.x - armPos.x;
-                    float dy = b->position.y - armPos.y;
-                    float dz = b->position.z - armPos.z;
-                    float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-
-                    if (dist < 3.0f) {
-                        OutputDebugStringA("Reflect Left Punch!!!\n");
-                        b->isDead = true;
-                        boss_->ReflectLeftPunch();
-                    }
+                if (distance < 2.0f) {
+                    OutputDebugStringA("Hit Right Punch!!!\n");
+                    player->OnDamage();
                 }
+            }
 
-                // ---------------------------------
-                // ② 右腕との判定
-                // ---------------------------------
-                // ⬇️ IsRightPunching になっていますか？
-                if (boss_->IsRightPunching()) {
-                    // ⬇️ GetRightArmPos になっていますか？
-                    Vector3 armPos = boss_->GetRightArmPos();
+            // ==========================================
+            // 当たり判定（ホーミングミサイル vs プレイヤー）
+            // ==========================================
+            for (int i = 0; i < Boss::kMaxMissiles; i++) {
+                if (boss_->IsMissileActive(i)) {
+                    Vector3 pPos = player->GetTranslate();
+                    Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
+                    Vector3 mPos = boss_->GetMissilePos(i);
 
-                    float dx = b->position.x - armPos.x;
-                    float dy = b->position.y - armPos.y;
-                    float dz = b->position.z - armPos.z;
-                    float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+                    float dx = pCenter.x - mPos.x; float dy = pCenter.y - mPos.y; float dz = pCenter.z - mPos.z;
+                    float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                    if (dist < 3.0f) {
-                        OutputDebugStringA("Reflect Right Punch!!!\n");
-                        b->isDead = true;
-                        // ⬇️ ReflectRightPunch になっていますか？            
-                        boss_->ReflectRightPunch();
+                    if (distance < 1.4f) {
+                        OutputDebugStringA("Hit Missile!!!\n");
+                        player->OnDamage();
+                        boss_->DeactivateMissile(i);
                     }
                 }
             }
+
+            // ==========================================
+            // 当たり判定（爆発範囲攻撃 vs プレイヤー）
+            // ==========================================
+            if (boss_->IsExplosionActive()) {
+                Vector3 pPos = player->GetTranslate();
+                Vector3 bPos = boss_->GetPos();
+                Vector3 expScale = boss_->GetExplosionScale();
+
+                float dx = pPos.x - bPos.x; float dz = pPos.z - bPos.z;
+                float distance = std::sqrt(dx * dx + dz * dz);
+
+                if (distance < expScale.x) {
+                    OutputDebugStringA("Hit Explosion!!! (AoE)\n");
+                    player->OnDamage();
+                }
+            }
+
+            // ==========================================
+            // 当たり判定（プレイヤーの弾 vs ボス）
+            // ==========================================
+            const std::list<Player::Bullet*>& bullets = player->GetBullets();
+            for (Player::Bullet* b : bullets) {
+                if (b->isDead) { continue; }
+
+                Vector3 bPos = b->position;
+                Vector3 bossPos = boss_->GetPos();
+                Vector3 bossCenter = { bossPos.x, bossPos.y + 1.0f, bossPos.z };
+
+                float dx = bPos.x - bossCenter.x; float dy = bPos.y - bossCenter.y; float dz = bPos.z - bossCenter.z;
+                float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                if (distance < 10.0f) {
+                    OutputDebugStringA("Hit Boss!!! (Player Attack)\n");
+                    b->isDead = true;
+                    boss_->OnDamage();
+                }
+            }
+
+            // ==========================================
+            // 当たり判定（プレイヤーの弾 vs ボスの腕 ＝ 反射！）
+            // ==========================================
+            for (Player::Bullet* b : bullets) {
+                if (b->isDead) { continue; }
+
+                if (b->radius >= 3.0f) {
+                    if (boss_->IsLeftPunching()) {
+                        Vector3 armPos = boss_->GetLeftArmPos();
+                        float dx = b->position.x - armPos.x; float dy = b->position.y - armPos.y; float dz = b->position.z - armPos.z;
+                        float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+                        if (dist < 3.0f) {
+                            b->isDead = true;
+                            boss_->ReflectLeftPunch();
+                        }
+                    }
+                    if (boss_->IsRightPunching()) {
+                        Vector3 armPos = boss_->GetRightArmPos();
+                        float dx = b->position.x - armPos.x; float dy = b->position.y - armPos.y; float dz = b->position.z - armPos.z;
+                        float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+                        if (dist < 3.0f) {
+                            b->isDead = true;
+                            boss_->ReflectRightPunch();
+                        }
+                    }
+                }
+            }
+
+        } // ⬅️ ★ 新規追加：ここで当たり判定の「大きな箱」を閉じる！！！
+
+    } // <- if (player && boss_) の閉じカッコ
+
+
+
+    // ==========================================mn
+    // 🎥 映画的カメラ演出ディレクター（完全版）
+    // ==========================================
+    if (camera_ && boss_ && player) {
+
+        // ---------------------------------------------------
+        // ① 登場演出のカメラ（斜め後ろの上空固定 → 足元着地）
+        // ---------------------------------------------------
+        if (boss_->isAppearing_) {
+            player->SetCinematic(true); // プレイヤーのカメラ操作を奪う
+
+            Vector3 bPos = boss_->GetPos();
+            Vector3 camPos;
+            Vector3 camRot;
+
+            // --- A. 落下前半：上空（Y=175）の固定カメラから、落ちていくボスを見下ろす ---
+            if (bPos.y > 80.0f) {
+                // X: +15.0f(右) / Y: 175.0f(上空固定) / Z: +15.0f(背中側)
+                camPos = { bPos.x + 15.0f, 175.0f, bPos.z + 15.0f };
+                // 少し下を向きつつ、左前（ボスの方向）を向く
+                camRot = { 0.8f, -2.35f, 0.0f };
+            }
+            // --- B. 落下後半 ～ 着地：地面のカメラに切り替えて見上げる ---
+            else {
+                // 着地点の少し手前で待ち構えるカメラ
+                camPos = { bPos.x, 2.0f, bPos.z - 20.0f };
+                camRot = { -0.1f, 0.0f, 0.0f }; // 少し上を見上げる角度
+
+                // --- C. 着地した瞬間：画面揺れ（スクリーンシェイク） ---
+                // 波エフェクトなしで、着地後最初の30フレーム（0.5秒）だけ激しく揺らす！
+                if (boss_->GetAppearanceTimer() > 0 && boss_->GetAppearanceTimer() < 30) {
+                    float shakeX = ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
+                    float shakeY = ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
+                    camPos.x += shakeX;
+                    camPos.y += shakeY;
+                }
+            }
+
+            camera_->SetTranslate(camPos);
+            camera_->SetRotate(camRot);
         }
 
+        // ---------------------------------------------------
+        // ② 撃破時のスタイリッシュ・カットイン演出（パッパッパッ！）
+        // ---------------------------------------------------
+        else if (boss_->IsDying()) {
+            player->SetCinematic(true); // プレイヤーのカメラ操作を奪う
 
+            Vector3 bPos = boss_->GetPos();
+            Vector3 camPos;
+            Vector3 camRot;
+            int timer = boss_->GetDeathTimer();
 
+          
+            if (timer < 60) {
+               
+                camPos = { bPos.x + 4.0f, bPos.y + 3.0f, bPos.z + 4.0f };
+                camRot = { 0.3f, -2.4f, 0.0f };
+            } else if (timer < 120) {
+              
+                camPos = { bPos.x-1.0f, bPos.y +1.5f, bPos.z -5.0f };
+                camRot = { 0.0f, 0.3f, -0.3f };
+            } else if (timer < 180) {
+              
+                camPos = { bPos.x - 3.0f, bPos.y + 1.0f, bPos.z + 6.0f };
+                camRot = { 0.0f, 2.7f, 0.0f };
+            }
+          
+            else {
+              
+                camPos = { bPos.x, 2.0f, bPos.z - 15.0f };
+                camRot = { 0.1f, 0.0f, 0.0f };
+
+                // ボスが崩れ落ちている間、画面全体もガタガタ揺らす！
+                if (timer < 240) {
+                    camPos.x += ((rand() % 100) / 100.0f - 0.5f) * 0.5f;
+                    camPos.y += ((rand() % 100) / 100.0f - 0.5f) * 0.5f;
+                }
+            }
+
+            camera_->SetTranslate(camPos);
+            camera_->SetRotate(camRot);
+        }
+
+        // ---------------------------------------------------
+        // ③ 普段のゲームプレイ（戦闘中）
+        // ---------------------------------------------------
+        else {
+            // 演出が終わったら、プレイヤーにカメラの操作権をお返しする
+            player->SetCinematic(false);
+        }
     }
 
-}
+} // <- GameScene::Update 関数の終わりのカッコ
 
 void GameScene::Draw() {
 
