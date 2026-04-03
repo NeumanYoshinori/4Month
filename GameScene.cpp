@@ -75,7 +75,7 @@ void GameScene::Update(Player* player) {
         // ⬇️ ★ 新規追加：ここに「大きなフタ」をする！
         // 登場中（isAppearing_）でも、やられ中（IsDying）でもない時だけ判定！
         // =======================================================
-        if (!boss_->isAppearing_ && !boss_->IsDying()) {
+        if (!boss_->isAppearing_ && !boss_->IsDying() && !boss_->IsTransitioning()) {
 
             if (boss_->IsShockwaveActive()) {
                 Vector3 pPos = player->GetTranslate();
@@ -215,96 +215,136 @@ void GameScene::Update(Player* player) {
     } // <- if (player && boss_) の閉じカッコ
 
 
-
-    // ==========================================mn
-    // 🎥 映画的カメラ演出ディレクター（完全版）
+// ==========================================
+    // 🎥 映画的カメラ演出ディレクター（完全統合版）
     // ==========================================
     if (camera_ && boss_ && player) {
 
+        // 今現在、何らかの演出（登場・変身・死亡）が再生されているか
+        bool isCurrentlyCinematic = (boss_->isAppearing_ || boss_->IsTransitioning() || boss_->IsDying());
+
         // ---------------------------------------------------
-        // ① 登場演出のカメラ（斜め後ろの上空固定 → 足元着地）
+        // A. 演出再生中（登場 / 形態変化 / 撃破）
         // ---------------------------------------------------
-        if (boss_->isAppearing_) {
-            player->SetCinematic(true); // プレイヤーのカメラ操作を奪う
+        if (isCurrentlyCinematic) {
+            player->SetCinematic(true); // プレイヤーのカメラ操作を無効化
+            wasCinematicLastFrame_ = true;
 
             Vector3 bPos = boss_->GetPos();
-            Vector3 camPos;
-            Vector3 camRot;
+            Vector3 camPos = { 0,0,0 };
+            Vector3 camRot = { 0,0,0 };
 
-            // --- A. 落下前半：上空（Y=175）の固定カメラから、落ちていくボスを見下ろす ---
-            if (bPos.y > 80.0f) {
-                // X: +15.0f(右) / Y: 175.0f(上空固定) / Z: +15.0f(背中側)
-                camPos = { bPos.x + 15.0f, 175.0f, bPos.z + 15.0f };
-                // 少し下を向きつつ、左前（ボスの方向）を向く
-                camRot = { 0.8f, -2.35f, 0.0f };
+            // ① 登場演出（上空から落下して着地）
+            if (boss_->isAppearing_) {
+                if (bPos.y > 80.0f) {
+                    camPos = { bPos.x + 15.0f, 175.0f, bPos.z + 15.0f }; // 上空固定
+                    camRot = { 0.8f, -2.35f, 0.0f };
+                } else {
+                    camPos = { bPos.x, 2.0f, bPos.z - 20.0f }; // 地面で見上げ
+                    camRot = { -0.1f, 0.0f, 0.0f };
+                    // 着地直後の画面揺れ
+                    if (boss_->GetAppearanceTimer() > 0 && boss_->GetAppearanceTimer() < 30) {
+                        camPos.x += ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
+                        camPos.y += ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
+                    }
+                }
             }
-            // --- B. 落下後半 ～ 着地：地面のカメラに切り替えて見上げる ---
-            else {
-                // 着地点の少し手前で待ち構えるカメラ
-                camPos = { bPos.x, 2.0f, bPos.z - 20.0f };
-                camRot = { -0.1f, 0.0f, 0.0f }; // 少し上を見上げる角度
-
-                // --- C. 着地した瞬間：画面揺れ（スクリーンシェイク） ---
-                // 波エフェクトなしで、着地後最初の30フレーム（0.5秒）だけ激しく揺らす！
-                if (boss_->GetAppearanceTimer() > 0 && boss_->GetAppearanceTimer() < 30) {
-                    float shakeX = ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
-                    float shakeY = ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
-                    camPos.x += shakeX;
-                    camPos.y += shakeY;
+            // ② 形態変化演出（第1→第2形態への覚醒）
+            else if (boss_->IsTransitioning()) {
+                int timer = boss_->GetTransitionTimer();
+                if (timer < 60) {
+                    // 前半1秒：引きの絵（ボスだけがプルプル震える）
+                    camPos = { bPos.x, 2.0f, bPos.z - 15.0f };
+                    camRot = { -0.05f, 0.0f, 0.0f };
+                } else {
+                    // 後半2秒：顔にズームして前後ガクガク揺れ
+                    camPos = { bPos.x, 2.0f, bPos.z - 4.0f };
+                    camRot = { -0.05f, 0.0f, 0.0f };
+                    float shakeZ = ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
+                    camPos.z += shakeZ;
+                }
+            }
+            // ③ 撃破演出（パッパッパッ！とカット切り替え）
+            else if (boss_->IsDying()) {
+                int timer = boss_->GetDeathTimer();
+                if (timer < 60) {
+                    camPos = { bPos.x + 4.0f, bPos.y + 3.0f, bPos.z + 4.0f }; // 右後ろ
+                    camRot = { 0.3f, -2.4f, 0.0f };
+                } else if (timer < 120) {
+                    camPos = { bPos.x - 1.0f, bPos.y + 1.5f, bPos.z - 5.0f }; // 左前ドアップ
+                    camRot = { 0.0f, 0.3f, -0.3f };
+                } else if (timer < 180) {
+                    camPos = { bPos.x - 3.0f, bPos.y + 1.0f, bPos.z + 6.0f }; // 左後ろ
+                    camRot = { 0.0f, 2.7f, 0.0f };
+                } else {
+                    camPos = { bPos.x, 2.0f, bPos.z - 15.0f }; // 正面で崩落を見守る
+                    camRot = { 0.1f, 0.0f, 0.0f };
+                    if (timer < 240) { // 崩れている間の揺れ
+                        camPos.x += ((rand() % 100) / 100.0f - 0.5f) * 0.5f;
+                        camPos.y += ((rand() % 100) / 100.0f - 0.5f) * 0.5f;
+                    }
                 }
             }
 
             camera_->SetTranslate(camPos);
             camera_->SetRotate(camRot);
+
+            // 「帰還演出」の開始地点として、今のカメラ状態を常に覚えさせておく
+            returnStartPos_ = camera_->GetTranslate();
+            returnStartRot_ = camera_->GetRotate();
+            cameraReturnTimer_ = 0;
         }
-
         // ---------------------------------------------------
-        // ② 撃破時のスタイリッシュ・カットイン演出（パッパッパッ！）
+        // B. 演出終了直後：自機カメラへの「帰還」フェーズ
         // ---------------------------------------------------
-        else if (boss_->IsDying()) {
-            player->SetCinematic(true); // プレイヤーのカメラ操作を奪う
+        else if (wasCinematicLastFrame_ || cameraReturnTimer_ > 0) {
 
-            Vector3 bPos = boss_->GetPos();
-            Vector3 camPos;
-            Vector3 camRot;
-            int timer = boss_->GetDeathTimer();
-
-          
-            if (timer < 60) {
-               
-                camPos = { bPos.x + 4.0f, bPos.y + 3.0f, bPos.z + 4.0f };
-                camRot = { 0.3f, -2.4f, 0.0f };
-            } else if (timer < 120) {
-              
-                camPos = { bPos.x-1.0f, bPos.y +1.5f, bPos.z -5.0f };
-                camRot = { 0.0f, 0.3f, -0.3f };
-            } else if (timer < 180) {
-              
-                camPos = { bPos.x - 3.0f, bPos.y + 1.0f, bPos.z + 6.0f };
-                camRot = { 0.0f, 2.7f, 0.0f };
-            }
-          
-            else {
-              
-                camPos = { bPos.x, 2.0f, bPos.z - 15.0f };
-                camRot = { 0.1f, 0.0f, 0.0f };
-
-                // ボスが崩れ落ちている間、画面全体もガタガタ揺らす！
-                if (timer < 240) {
-                    camPos.x += ((rand() % 100) / 100.0f - 0.5f) * 0.5f;
-                    camPos.y += ((rand() % 100) / 100.0f - 0.5f) * 0.5f;
-                }
+            // 演出が終わった瞬間、タイマーを1秒分（60）セット
+            if (wasCinematicLastFrame_) {
+                cameraReturnTimer_ = kReturnDuration;
+                wasCinematicLastFrame_ = false;
             }
 
-            camera_->SetTranslate(camPos);
-            camera_->SetRotate(camRot);
-        }
+            // 進捗率 t (0.0 ～ 1.0) を計算
+            float t = 1.0f - (float)cameraReturnTimer_ / kReturnDuration;
 
+            // 【イージング】SmoothStepで動きを滑らかにする
+            t = t * t * (3.0f - 2.0f * t);
+
+            // 目的地（自機カメラの本来の位置）を計算
+            Vector3 pPos = player->GetTranslate();
+            Vector3 pRot = player->GetRotate();
+            float dist = 15.0f;
+            float angleX = 0.2f; // Player.cppの設定に合わせる
+
+            Vector3 targetPos;
+            targetPos.x = pPos.x - std::sin(pRot.y) * std::cos(angleX) * dist;
+            targetPos.y = (pPos.y + 1.5f) + std::sin(angleX) * dist;
+            targetPos.z = pPos.z - std::cos(pRot.y) * std::cos(angleX) * dist;
+            Vector3 targetRot = { angleX, pRot.y, 0.0f };
+
+            // Lerp（補間）で中間地点の座標と角度を出す
+            Vector3 currentPos = {
+                returnStartPos_.x + (targetPos.x - returnStartPos_.x) * t,
+                returnStartPos_.y + (targetPos.y - returnStartPos_.y) * t,
+                returnStartPos_.z + (targetPos.z - returnStartPos_.z) * t
+            };
+            Vector3 currentRot = {
+                returnStartRot_.x + (targetRot.x - returnStartRot_.x) * t,
+                returnStartRot_.y + (targetRot.y - returnStartRot_.y) * t,
+                returnStartRot_.z + (targetRot.z - returnStartRot_.z) * t
+            };
+
+            camera_->SetTranslate(currentPos);
+            camera_->SetRotate(currentRot);
+
+            cameraReturnTimer_--;
+            player->SetCinematic(true); // 戻りきるまでは勝手に動かされないように固定
+        }
         // ---------------------------------------------------
-        // ③ 普段のゲームプレイ（戦闘中）
+        // C. 通常プレイ（自由操作）
         // ---------------------------------------------------
         else {
-            // 演出が終わったら、プレイヤーにカメラの操作権をお返しする
             player->SetCinematic(false);
         }
     }

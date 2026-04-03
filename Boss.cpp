@@ -46,9 +46,9 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	 // ==========================================
 	 // ① サイズを小さくする（0.1倍など、ちょうどいいサイズを探します）
 	Vector3 bossScale = { 0.5f, 0.5f, 0.5f }; // ここを 0.5f や 0.05f などに変えて調整
-	objectBody_->SetScale(bossScale);
-	objectLeftArm_->SetScale(bossScale);
-	objectRightArm_->SetScale(bossScale);
+	objectBody_->SetScale(bossScale_);
+	objectLeftArm_->SetScale(bossScale_);
+	objectRightArm_->SetScale(bossScale_);
 
 	// ② カメラから少し離れた位置（奥）に置く
 	// 今カメラが Z: -10.0f にいるので、ボスを Z: 10.0f くらいに置くと全体が見えやすいです
@@ -63,10 +63,10 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// コマみたいに横を向かせたい（旋回させたい）場合は、真ん中の「Y」の値をいじります。
 
 	// 例：180度回して反対を向かせる
-	Vector3 bossRotate = { 0.0f, 1.57f, 0.0f };
-	objectBody_->SetRotate(bossRotate);
-	objectLeftArm_->SetRotate(bossRotate);
-	objectRightArm_->SetRotate(bossRotate);
+	//Vector3 bossRotate = { 0.0f, 1.57f, 0.0f };
+	objectBody_->SetRotate(bossRotate_);
+	objectLeftArm_->SetRotate(bossRotate_);
+	objectRightArm_->SetRotate(bossRotate_);
 
 	float armOffset = 2.0f;
 
@@ -255,7 +255,7 @@ void Boss::Update(Player* player) {
 		rightPunchState_ = PunchState::kIdle;
 
 		// 120フレーム（2秒）経ったら第2形態スタート！
-		if (transitionTimer_ >= 120) {
+		if (transitionTimer_ >= 180) {
 			phase_ = 2;              // 第2形態へ！
 			hp_ = 10;               // 第2形態のHP！
 			attackTimer_ = 0;        // 攻撃タイマーリセット
@@ -627,10 +627,37 @@ void Boss::Update(Player* player) {
 	// ==========================================
 
 	float yOffset = 1.0f;
+	float shakeX = 0.0f;
+	float shakeY = 0.0f;
 
-	objectBody_->SetTranslate({ bossPos_.x, bossPos_.y + yOffset, bossPos_.z });
-	objectLeftArm_->SetTranslate({ leftArmPos_.x, leftArmPos_.y + yOffset, leftArmPos_.z });
-	objectRightArm_->SetTranslate({ rightArmPos_.x, rightArmPos_.y + yOffset, rightArmPos_.z });
+	// ⬇️ ★ 追加：形態変化中なら、ボス自身を震わせる！
+	if (isTransitioning_) {
+		if (transitionTimer_ < 60) {
+			// 前半の1秒：小刻みにプルプル震える
+			shakeX = ((rand() % 100) / 100.0f - 0.5f) * 0.1f;
+			shakeY = ((rand() % 100) / 100.0f - 0.5f) * 0.1f;
+		} else {
+			// 後半の2秒：激しく震える（暴走）
+			shakeX = ((rand() % 100) / 100.0f - 0.5f) * 0.4f;
+			shakeY = ((rand() % 100) / 100.0f - 0.5f) * 0.4f;
+		}
+	}
+
+	objectBody_->SetScale(bossScale_);
+	objectLeftArm_->SetScale(bossScale_);
+	objectRightArm_->SetScale(bossScale_);
+
+	// ★ 計算した震え（shakeX, shakeY）を足して描画する！
+	objectBody_->SetTranslate({ bossPos_.x + shakeX, bossPos_.y + yOffset + shakeY, bossPos_.z });
+	objectLeftArm_->SetTranslate({ leftArmPos_.x + shakeX, leftArmPos_.y + yOffset + shakeY, leftArmPos_.z });
+	objectRightArm_->SetTranslate({ rightArmPos_.x + shakeX, rightArmPos_.y + yOffset + shakeY, rightArmPos_.z });
+
+	// スタン中（腕をぐるぐる回している時）以外は、基本の回転をセットする
+	if (stunTimer_ <= 0) {
+		objectBody_->SetRotate(bossRotate_);
+		objectLeftArm_->SetRotate(bossRotate_);
+		objectRightArm_->SetRotate(bossRotate_);
+	}
 
 	objectBody_->Update();
 	objectLeftArm_->Update();

@@ -54,8 +54,17 @@ public:
             hp_ -= 1;
 
             if (hp_ <= 0) {
+                // ⬇️  修正：第1形態のHPが0になった時の処理！
                 if (phase_ == 1) {
                     isTransitioning_ = true;
+                    transitionTimer_ = 0; // タイマーをリセット
+
+                    // ⬇️  追加：第1形態の攻撃をその場で強制終了させる（お片付け）
+                    leftPunchState_ = PunchState::kIdle;
+                    rightPunchState_ = PunchState::kIdle;
+                    isShockwaveActive_ = false;
+
+                    OutputDebugStringA("BOSS TRANSITION START!!!\n");
                 } else if (phase_ == 2) {
                     isDying_ = true;
                     deathTimer_ = 0;
@@ -114,6 +123,23 @@ public:
     int GetAppearanceTimer() const { return appearanceTimer_; }
 
 
+    // ==========================================
+    //  追加：ImGui（デバッグ）用の窓口
+    // ==========================================
+    Vector3* GetPosPtr() { return &bossPos_; }
+    Vector3* GetRotatePtr() { return &bossRotate_; }
+    Vector3* GetScalePtr() { return &bossScale_; }
+    int GetPhase() const { return phase_; }
+
+
+    // ==========================================
+    // フェーズ（形態）管理用パラメータの窓口
+    // ==========================================
+    // ⬇️ ★ 追加：形態変化中かどうか、そしてそのタイマーを見る窓口
+    bool IsTransitioning() const { return isTransitioning_; }
+    int GetTransitionTimer() const { return transitionTimer_; }
+
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 
@@ -125,11 +151,7 @@ private:
     Object3d* objectRightArm_ = nullptr;
 
 
-    // ==========================================
-    // ボスのパラメータ
-    // ==========================================
-    // ボスの基本座標（常にここを基準にする）
-    Vector3 bossPos_ = { 0.0f, 0.0f, 10.0f };
+    
 
     // ロケットパンチの状態を表す「列挙型（enum）」
     enum class PunchState {
@@ -208,4 +230,17 @@ private:
     Object3d* explosion_ = nullptr;                 // 爆発の3Dモデル
     bool isExplosionActive_ = false;                // 爆発中かどうか
     Vector3 explosionScale_ = { 0.1f, 0.1f, 0.1f }; // 爆発の広がり具合
+
+
+    // ==========================================
+    // ボスのパラメータ
+    // ==========================================
+    // ボスの基本座標（常にここを基準にする）
+    Vector3 bossPos_ = { 0.0f, 0.0f, 10.0f };
+
+   
+    Vector3 bossRotate_ = { 0.0f, 1.57f, 0.0f };
+    Vector3 bossScale_ = { 0.5f, 0.5f, 0.5f };
+
+
 };

@@ -15,6 +15,9 @@ public:
   
     ~GameScene();
 
+    Boss* GetBoss() const { return boss_; }
+
+
 private:
     // ボスのインスタンス
     Boss* boss_ = nullptr;
@@ -26,5 +29,11 @@ private:
     Object3dCommon* object3dCommon_ = nullptr;
 
     Camera* camera_ = nullptr;
+
+    int cameraReturnTimer_ = 0;       // 戻るためのタイマー
+    const int kReturnDuration = 60;   // 60フレーム（1秒）かけて戻る
+    Vector3 returnStartPos_;          // 戻り始めた瞬間の座標
+    Vector3 returnStartRot_;          // 戻り始めた瞬間の角度
+    bool wasCinematicLastFrame_ = false; // 前のフレームで演出中だったか
 
 };

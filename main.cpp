@@ -401,6 +401,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::ShowDemoWindow();
 
 		ImGui::Begin("Settings");
+
+
+		// ===================================================
+		// ボスのデバッグパネル
+		// ===================================================
+		if (gameScene->GetBoss()) {
+			// ボスの設定をまとめる折りたたみメニュー
+			if (ImGui::TreeNode("Boss Settings")) {
+				Boss* boss = gameScene->GetBoss();
+
+				// ① ドラッグで値を操作できるスライダー（XYZ軸）
+				// 引数：表示名, 変数のアドレス, ドラッグした時の変化量
+				ImGui::DragFloat3("Position", &boss->GetPosPtr()->x, 0.1f);
+				ImGui::DragFloat3("Rotation", &boss->GetRotatePtr()->x, 0.01f);
+				ImGui::DragFloat3("Scale", &boss->GetScalePtr()->x, 0.01f);
+
+				ImGui::Spacing(); // 少し隙間を空ける
+
+				// ② HPの調整スライダー
+				ImGui::SliderInt("HP", &boss->hp_, 0, 10);
+
+				// ③ 現在のステータス表示（テキスト）
+				ImGui::Text("Phase: %d", boss->GetPhase());
+				ImGui::Text("Is Dying: %s", boss->IsDying() ? "TRUE" : "FALSE");
+
+				ImGui::Spacing();
+
+				// ④ デバッグ用の便利ボタン！
+				if (ImGui::Button("Force Phase 2")) {
+					boss->ForcePhase2(); // クリックで強制的に第2形態へ！
+				}
+				ImGui::SameLine(); // 次のボタンを横に並べる
+				if (ImGui::Button("Kill Boss")) {
+					boss->hp_ = 0; // クリックで強制キル！
+				}
+
+				ImGui::TreePop(); // 折りたたみメニューの終わり
+			}
+		}
+		// ===================================================
+
+
 		ImGui::End();
 #endif
 
