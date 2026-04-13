@@ -210,13 +210,34 @@ void GameScene::Update(Player* player) {
                 }
             }
 
-        } // ⬅️ ★ 新規追加：ここで当たり判定の「大きな箱」を閉じる！！！
+   // ==========================================
+   // 鈍足化フィールドの判定
+   // ==========================================
+            float playerSpeed = 0.1f; // 通常速度
+            for (int i = 0; i < Boss::kMaxSpheres; i++) {
+                if (boss_->IsSphereActive(i)) {
+                    Vector3 pPos = player->GetTranslate();
+                    Vector3 sPos = boss_->GetSpherePos(i);
+                    float dx = pPos.x - sPos.x;
+                    float dz = pPos.z - sPos.z;
+                    float dist = std::sqrt(dx * dx + dz * dz);
 
-    } // <- if (player && boss_) の閉じカッコ
+                    if (dist < boss_->GetSphereRadius()) {
+                        playerSpeed = 0.03f; // スフィア内では大幅にスピードダウン！
+                        break;
+                    }
+                }
+            }
+       
+            player->SetSpeed(playerSpeed);
+
+        } 
+
+    } 
 
 
-// ==========================================
-    // 🎥 映画的カメラ演出ディレクター（完全統合版）
+    // ==========================================
+    // 映画的カメラ演出ディレクター
     // ==========================================
     if (camera_ && boss_ && player) {
 
@@ -254,11 +275,11 @@ void GameScene::Update(Player* player) {
                 int timer = boss_->GetTransitionTimer();
                 if (timer < 60) {
                     // 前半1秒：引きの絵（ボスだけがプルプル震える）
-                    camPos = { bPos.x, 2.0f, bPos.z - 15.0f };
+                    camPos = { bPos.x, 2.0f, bPos.z - 25.0f };
                     camRot = { -0.05f, 0.0f, 0.0f };
                 } else {
                     // 後半2秒：顔にズームして前後ガクガク揺れ
-                    camPos = { bPos.x, 2.0f, bPos.z - 4.0f };
+                    camPos = { bPos.x, 2.0f, bPos.z - 15.0f };
                     camRot = { -0.05f, 0.0f, 0.0f };
                     float shakeZ = ((rand() % 100) / 100.0f - 0.5f) * 2.0f;
                     camPos.z += shakeZ;

@@ -124,6 +124,14 @@ public:
 
 
     // ==========================================
+    // 第2形態 鈍足化スフィア用
+    // ==========================================
+    static const int kMaxSpheres = 3; // 同時に出る数
+    bool IsSphereActive(int index) const { return isSphereActive_[index]; }
+    Vector3 GetSpherePos(int index) const { return spherePos_[index]; }
+    float GetSphereRadius() const { return 2.0f; } // 鈍足になる範囲
+
+    // ==========================================
     //  追加：ImGui（デバッグ）用の窓口
     // ==========================================
     Vector3* GetPosPtr() { return &bossPos_; }
@@ -135,7 +143,7 @@ public:
     // ==========================================
     // フェーズ（形態）管理用パラメータの窓口
     // ==========================================
-    // ⬇️ ★ 追加：形態変化中かどうか、そしてそのタイマーを見る窓口
+    // 形態変化中かどうか、そしてそのタイマーを見る窓口
     bool IsTransitioning() const { return isTransitioning_; }
     int GetTransitionTimer() const { return transitionTimer_; }
 
@@ -233,6 +241,14 @@ private:
 
 
     // ==========================================
+    // 第2形態 鈍足化スフィア用
+    // ==========================================
+    Object3d* spheres_[kMaxSpheres] = { nullptr };
+    bool isSphereActive_[kMaxSpheres] = { false };
+    Vector3 spherePos_[kMaxSpheres];
+    int sphereLifeTimer_[kMaxSpheres] = { 0 };
+
+    // ==========================================
     // ボスのパラメータ
     // ==========================================
     // ボスの基本座標（常にここを基準にする）
@@ -241,6 +257,7 @@ private:
    
     Vector3 bossRotate_ = { 0.0f, 1.57f, 0.0f };
     Vector3 bossScale_ = { 0.5f, 0.5f, 0.5f };
+
 
 
 };

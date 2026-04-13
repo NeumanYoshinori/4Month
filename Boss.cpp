@@ -118,6 +118,19 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	explosion_->SetModel("explosion.obj"); // 波紋のように広がる円（平面）
 	explosion_->SetCamera(camera);
 
+	// ==========================================
+	// 8.　重力ゾーンの準備
+	// ==========================================
+	ModelManager::GetInstance()->LoadModel("gravity.obj");
+
+	for (int i = 0; i < kMaxSpheres; i++) {
+		spheres_[i] = new Object3d();
+		spheres_[i]->Initialize(object3dCommon);
+		spheres_[i]->SetModel("gravity.obj");
+		spheres_[i]->SetCamera(camera);
+	}
+
+
 }
 
 void Boss::Update(Player* player) {
@@ -420,13 +433,55 @@ void Boss::Update(Player* player) {
 			if (explosionScale_.x > 7.5f) {
 				isExplosionActive_ = false;
 				// ★ タイマーを -100 にリセットし、再び「ミサイル → ジャンプ」のループへ戻る
-				attackTimer_ = -100;
+				//attackTimer_ = -120;
 			}
 
 			explosion_->SetTranslate({ bossPos_.x, 0.01f, bossPos_.z }); // ボスの足元
 			explosion_->SetScale(explosionScale_);
 			explosion_->Update();
 		}
+
+	// ==========================================
+	// 攻撃4：グラビティ・スフィア生成
+	// ==========================================
+	// 全てのスフィアが非アクティブかチェック
+		bool anyActive = false;
+		for (int i = 0; i < kMaxSpheres; i++) { if (isSphereActive_[i]) anyActive = true; }
+
+		// 全て消えていて、かつ特定のタイミング（例：attackTimerが100）で生成
+		// 生成条件を「80になった瞬間」かつ「まだ誰もいない時」に固定
+		if (!anyActive && attackTimer_ == 400) {
+			for (int i = 0; i < kMaxSpheres; i++) {
+				isSphereActive_[i] = true;
+				sphereLifeTimer_[i] = 300;
+
+				// 生成位置をプレイヤーの周りにセット
+				float rx = ((rand() % 100) / 100.0f - 0.5f) * 20.0f;
+				float rz = ((rand() % 100) / 100.0f - 0.5f) * 20.0f;
+				spherePos_[i] = { player->GetTranslate().x + rx, 0.01f, player->GetTranslate().z + rz };
+
+				OutputDebugStringA("GRAVITY SPHERE GENERATED!!!\n");
+			}
+
+			attackTimer_ = -120;
+		}
+
+		// スフィアの寿命管理
+		for (int i = 0; i < kMaxSpheres; i++) {
+			if (isSphereActive_[i]) {
+				sphereLifeTimer_[i]--;
+				if (sphereLifeTimer_[i] <= 0) {
+					isSphereActive_[i] = false;
+				} else {
+					float domeY = -0.2f;
+					spheres_[i]->SetTranslate(spherePos_[i]);
+					spheres_[i]->SetScale({ 1.0f, 1.0f, 1.0f }); // 範囲に合わせて大きく
+					Vector4 domeColor = { 0.7f, 0.0f, 1.0f, 0.4f }; // 鮮やかな紫、透明度40%
+					spheres_[i]->Update();
+				}
+			}
+		}
+
 	}
 
 	// ==========================================
@@ -690,6 +745,12 @@ void Boss::Draw() {
 	if (isExplosionActive_ && explosion_) {
 		explosion_->Draw();
 	}
+
+	for (int i = 0; i < kMaxSpheres; i++) {
+		if (isSphereActive_[i] && spheres_[i]) {
+			spheres_[i]->Draw();
+		}
+	}
 }
 
 Boss::~Boss() {
@@ -704,5 +765,12 @@ Boss::~Boss() {
 	}
 
 	delete explosion_;
+
+	for (int i = 0; i < kMaxSpheres; i++) {
+		if (spheres_[i]) {
+			delete spheres_[i];
+			spheres_[i] = nullptr;
+		}
+	}
 }
 

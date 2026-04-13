@@ -89,7 +89,7 @@ void Player::Update(Input* input) {
 	// 2. プレイヤーの移動（WASDによるストレイフ移動）
 	// ==========================================
 	if (input) {
-		float speed = 0.1f;
+		float speed = currentSpeed_;
 
 		// プレイヤーが向いている「正面」と「右」のベクトルを計算
 		Vector3 forward = { std::sin(transform.rotate.y), 0.0f, std::cos(transform.rotate.y) };
@@ -239,6 +239,8 @@ void Player::Update(Input* input) {
 
 	//transformationMatrixData->WVP = worldViewProjectionMatrix;
 	//transformationMatrixData->World = worldMatrix;
+
+	currentSpeed_ = 0.1f;
 }
 
 void Player::Draw() {

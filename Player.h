@@ -93,6 +93,9 @@ public: // メンバ関数
 	bool isCinematic_ = false;
 	void SetCinematic(bool isCinematic) { isCinematic_ = isCinematic; }
 
+	// 現在の速度を受け取るための関数
+	void SetSpeed(float speed) { currentSpeed_ = speed; }
+
 private:
 	// 座標変換行列データ作成
 	void CreateTransformationMatrixData();
@@ -143,5 +146,8 @@ private:
 	std::list<Bullet*> bullets_;
 	int chargeTimer_ = 0;       // 左クリックを長押ししている時間
 	bool isCharging_ = false;   // チャージ中かどうか
+
+	// 現在の移動速度を保存する変数（初期値は通常速度の 0.1f）
+	float currentSpeed_ = 0.1f;
 
 };
