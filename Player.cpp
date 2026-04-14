@@ -14,6 +14,7 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	ModelManager::GetInstance()->LoadModel("bullet.obj");
 
 	ModelManager::GetInstance()->LoadModel("player.obj");
+	ModelManager::GetInstance()->LoadModel("player_red.obj"); // 赤い自機のモデルを用意してください
 
 	object3d_ = new Object3d();
 	object3d_->Initialize(object3dCommon_);
@@ -109,10 +110,16 @@ void Player::Update(Input* input) {
 			isGrounded = false; // 空中判定にする
 		}
 
+		
 		// Y座標に速度（落下・ジャンプ）を足し込む
 		transform.translate.y += velocityY;
 
-		// 簡易的な地面との当たり判定 (Y=0.0f を地面とする場合)
+		// ... (この下に既存の地面との当たり判定が続く) ...
+
+		// Y座標に速度（落下・ジャンプ）を足し込む
+		transform.translate.y += velocityY;
+
+		// 簡易的な地面との当たり判定 (Y=0.0f を地面とする場合)z
 		// ※もしレイキャストやAABBの処理を既に作っていた場合は、ここをそちらに差し替えてください
 		float groundHeight = 0.0f;
 
@@ -147,23 +154,52 @@ void Player::Update(Input* input) {
 	if (isDead_) return;
 
 	// ==========================================
-	// 弾の発射処理
+	// 弾の発射とチャージ処理
 	// ==========================================
-	// 左クリックが押されているかチェック (0x8000 で押下状態を判定)
+	// 左クリックを押している間
 	if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState('M') & 0x8000)) {
 		isCharging_ = true;
 		chargeTimer_++;
-	} else {
+
+		if (chargeTimer_ >= 180) {
+			// まだモデルを切り替えていなければ、赤いモデルに変更する
+			if (!isChargeCompleted_) {
+				isChargeCompleted_ = true;
+				object3d_->SetModel("player_red.obj");
+			}
+		}
+
+		// 20フレーム以上、かつ「チャージ完了前」の時だけパーティクルを出す
+		if (chargeTimer_ > 20 && !isChargeCompleted_) {
+			// 3フレームに1回パーティクル生成
+			if (chargeTimer_ % 3 == 0) {
+				Vector3 center = transform.translate;
+				center.y += 1.0f;
+				SpawnChargeParticle(center);
+			}
+		}
+
+	}
+	else {
 		// 左クリックを離した瞬間
 		if (isCharging_) {
-			// 180フレーム（約3秒）以上溜めていたらチャージショット！
-			FireBullet(chargeTimer_ >= 180);
+			FireBullet(isChargeCompleted_);
+
+			// リセット処理
 			isCharging_ = false;
 			chargeTimer_ = 0;
+
+			if (isChargeCompleted_) {
+				isChargeCompleted_ = false;
+				object3d_->SetModel("player.obj");
+			}
 		}
 	}
 
+	// ==========================================
 	// 弾の更新（移動と寿命管理）
+	// ==========================================
+
 	for (auto it = bullets_.begin(); it != bullets_.end(); ) {
 		Bullet* b = *it;
 		b->lifeTimer--;
@@ -187,7 +223,8 @@ void Player::Update(Input* input) {
 
 		++it;
 	}
-	// ==========================================
+
+	UpdateChargeParticles();
 	
 	// ==========================================
 	// 3. カメラの配置（プレイヤーを中央に捉える）
@@ -269,6 +306,10 @@ void Player::Draw() {
 	for (Bullet* b : bullets_) {
 		b->object3d->Draw();
 	}
+
+	for (ChargeParticle* p : chargeParticles_) {
+		p->object3d->Draw();
+	}
 }
 
 
@@ -307,7 +348,6 @@ void Player::CreateDirectionalLight() {
 // 弾を生成して発射する関数
 // ==========================================
 void Player::FireBullet(bool isCharged) {
-	// ★ b ではなく newBullet に変更！
 	Bullet* newBullet = new Bullet();
 	newBullet->object3d = new Object3d();
 	newBullet->object3d->Initialize(object3dCommon_);
@@ -374,6 +414,80 @@ void Player::FireBullet(bool isCharged) {
 }
 
 // ==========================================
+// チャージパーティクルを生成する関数
+// ==========================================
+void Player::SpawnChargeParticle(const Vector3& center) {
+	ChargeParticle* p = new ChargeParticle();
+	p->object3d = new Object3d();
+	p->object3d->Initialize(object3dCommon_);
+	p->object3d->SetModel("cube.obj"); // 既存のcubeモデルを流用
+
+	//// 中心からランダムな方向・距離に発生させる
+	//float angle = (rand() % 360) * 3.141592f / 180.0f;
+	//float height = ((rand() % 200) - 100) / 100.0f; // -1.0f ~ 1.0f
+	//float radius = 3.0f + ((rand() % 20) / 10.0f);  // 3.0f ~ 5.0f の距離
+	float spread = 0.5f;
+	float offsetX = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * spread; // -2.0 〜 2.0
+	float offsetY = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * spread;
+	float offsetZ = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * spread;
+
+	/*p->startPos.x = center.x + std::cos(angle) * radius;
+	p->startPos.y = center.y + height * radius;
+	p->startPos.z = center.z + std::sin(angle) * radius;*/
+
+	p->startPos.x = center.x + offsetX;
+	p->startPos.y = center.y + offsetY;
+	p->startPos.z = center.z + offsetZ;
+
+	p->position = p->startPos;
+	p->progress = 0.0f;
+
+	// スピードも少しランダムにしてバラつきを出す
+	p->speed = 0.02f + ((rand() % 15) / 1000.0f); // 0.02 ~ 0.035
+
+	chargeParticles_.push_back(p);
+}
+
+// ==========================================
+// チャージパーティクルの更新（中心に引き寄せる）
+// ==========================================
+void Player::UpdateChargeParticles() {
+	// 吸い込まれる中心点（常に最新のプレイヤー位置を追従させる）
+	Vector3 center = transform.translate;
+	center.y += 1.0f;
+
+	for (auto it = chargeParticles_.begin(); it != chargeParticles_.end(); ) {
+		ChargeParticle* p = *it;
+		p->progress += p->speed;
+
+		// 進行度が1.0（中心に到達）を超えたか、チャージが中断されたら削除
+		if (p->progress >= 1.0f || !isCharging_) {
+			delete p->object3d;
+			delete p;
+			it = chargeParticles_.erase(it);
+			continue;
+		}
+
+		// 線形補間(Lerp)で現在地を計算：スタート地点から中心地点へ徐々に移動
+		p->position.x = p->startPos.x + (center.x - p->startPos.x) * p->progress;
+		p->position.y = p->startPos.y + (center.y - p->startPos.y) * p->progress;
+		p->position.z = p->startPos.z + (center.z - p->startPos.z) * p->progress;
+
+		// 演出：中心に近づくほど小さくする (0.3f から 0.0f へ)
+		float scale = 0.05f * (1.0f - p->progress);
+
+		// チャージ時間が長いほど全体を大きく・激しくしたい場合は chargeTimer_ を掛ける応用も可能です
+
+		p->object3d->SetScale({ scale, scale, scale });
+		p->object3d->SetTranslate(p->position);
+		p->object3d->SetCamera(camera_);
+		p->object3d->Update();
+
+		++it;
+	}
+}
+
+// ==========================================
 // デストラクタｖ
 // ==========================================
 Player::~Player() {
@@ -387,4 +501,12 @@ Player::~Player() {
 		delete b;
 	}
 	bullets_.clear();
+
+	// ==== Player::~Player() (デストラクタ) 内に追加 ====
+
+	for (ChargeParticle* p : chargeParticles_) {
+		delete p->object3d;
+		delete p;
+	}
+	chargeParticles_.clear();
 }

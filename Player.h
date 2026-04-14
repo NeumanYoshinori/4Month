@@ -79,6 +79,17 @@ public: // メンバ関数
 	const std::list<Bullet*>& GetBullets() const { return bullets_; }
 	void FireBullet(bool isCharged); // 弾を発射する関数
 
+	void OnDamage(int damage = 1) {
+		if (isInvincible_) return; // 無敵時間中なら無視
+
+		hp_ -= damage;
+		if (hp_ < 0) hp_ = 0;
+
+		// ダメージを受けた後の無敵タイマーなどをセットするとよりゲームらしくなります
+		isInvincible_ = true;
+		invincibleTimer_ = 60; // 1秒間無敵など
+	}
+
 private:
 	// 座標変換行列データ作成
 	void CreateTransformationMatrixData();
@@ -130,22 +141,24 @@ private:
 	int chargeTimer_ = 0;       // 左クリックを長押ししている時間
 	bool isCharging_ = false;   // チャージ中かどうか
 
+	int hp_ = 10;
+	bool isInvincible_ = false;
+	int invincibleTimer_ = 0;
+	bool isDead_ = false; // プレイヤー自身の死亡フラグ
 
-	public:
-		void OnDamage(int damage = 1) {
-			if (isInvincible_) return; // 無敵時間中なら無視
+	struct ChargeParticle {
+		Object3d* object3d = nullptr;
+		Vector3 startPos;     // 発生した位置
+		Vector3 position;     // 現在の位置
+		float progress;       // 中心に向かう進行度 (0.0f ~ 1.0f)
+		float speed;          // 吸い込まれるスピード
+	};
 
-			hp_ -= damage;
-			if (hp_ < 0) hp_ = 0;
+	std::list<ChargeParticle*> chargeParticles_;
 
-			// ダメージを受けた後の無敵タイマーなどをセットするとよりゲームらしくなります
-			isInvincible_ = true;
-			invincibleTimer_ = 60; // 1秒間無敵など
-		}
+	// パーティクルの生成と更新用関数
+	void SpawnChargeParticle(const Vector3& center);
+	void UpdateChargeParticles();
 
-	private:
-		int hp_ = 10;
-		bool isInvincible_ = false;
-		int invincibleTimer_ = 0;
-		bool isDead_ = false; // プレイヤー自身の死亡フラグ
+	bool isChargeCompleted_ = false;
 };

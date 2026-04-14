@@ -353,7 +353,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 音声読み込み
 	SoundData soundData1 = SoundLoadWave("resources/Alarm01.wav");
 	// 音声再生
-	SoundPlayWave(xAudio2.Get(), soundData1);
+	//SoundPlayWave(xAudio2.Get(), soundData1);
 
 	// ブレンドモード
 	static int currentBlend = kBlendModeNone;
