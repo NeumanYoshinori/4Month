@@ -387,7 +387,7 @@ void Boss::Update(Player* player) {
 		}
 
 		// ==========================================
-		// ★ 攻撃2：ブラックホール（プレイヤーを吸引）
+		// 攻撃2：ブラックホール（プレイヤーを吸引）
 		// ==========================================
 		// タイマーが150〜330の間（約3秒間）、強烈に吸い寄せる！
 		if (attackTimer_ >= 150 && attackTimer_ < 330) {
@@ -415,7 +415,7 @@ void Boss::Update(Player* player) {
 		}
 
 		// ==========================================
-		// ★ 攻撃3：大爆発（足元範囲ドカン！）
+		// 攻撃3：大爆発（足元範囲ドカン！）
 		// ==========================================
 		// 吸引が終わった瞬間（330）に爆発スタート！
 		if (attackTimer_ == 330) {
@@ -432,7 +432,7 @@ void Boss::Update(Player* player) {
 			// 最大サイズ（15.0f）まで広がったら終了
 			if (explosionScale_.x > 7.5f) {
 				isExplosionActive_ = false;
-				// ★ タイマーを -100 にリセットし、再び「ミサイル → ジャンプ」のループへ戻る
+				
 				//attackTimer_ = -120;
 			}
 
@@ -448,8 +448,7 @@ void Boss::Update(Player* player) {
 		bool anyActive = false;
 		for (int i = 0; i < kMaxSpheres; i++) { if (isSphereActive_[i]) anyActive = true; }
 
-		// 全て消えていて、かつ特定のタイミング（例：attackTimerが100）で生成
-		// 生成条件を「80になった瞬間」かつ「まだ誰もいない時」に固定
+		
 		if (!anyActive && attackTimer_ == 400) {
 			for (int i = 0; i < kMaxSpheres; i++) {
 				isSphereActive_[i] = true;
