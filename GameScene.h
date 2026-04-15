@@ -1,5 +1,6 @@
 #pragma once
 #include "Boss.h" 
+#include "Skydome.h"
 
 // 既存のエンジンのクラス
 class Player;
@@ -24,6 +25,7 @@ private:
 
     Object3d* field_ = nullptr;
 
+    Skydome* skydome_ = nullptr;
    
     ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;

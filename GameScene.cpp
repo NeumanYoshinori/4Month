@@ -34,9 +34,14 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
         boss_->Initialize(object3dCommon_, camera);
     }
 
+    skydome_ = new Skydome();
+    skydome_->Initialize(object3dCommon_, camera_);
+
 }
 
 void GameScene::Update(Player* player) {
+
+    skydome_->Update(camera_);
 
     // ==========================================
     // プレゼン用魔法のキー（本番が終わったら消す！）
@@ -374,6 +379,10 @@ void GameScene::Update(Player* player) {
 
 void GameScene::Draw() {
 
+    if (skydome_) {
+        skydome_->Draw(); 
+    }
+
     if (field_) {
         field_->Draw();
     }
@@ -392,4 +401,6 @@ GameScene::~GameScene() {
     delete field_;
     field_ = nullptr;
 
+    delete skydome_;
+    skydome_ = nullptr;
 }
