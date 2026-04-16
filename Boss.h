@@ -8,7 +8,6 @@ class Player;
 
 class Boss {
 public:
-    // 引数を Object3dCommon だけに変更
     void Initialize(Object3dCommon* object3dCommon, Camera* camera);
     void Update(Player* player);
     void Draw();
@@ -54,12 +53,12 @@ public:
             hp_ -= 1;
 
             if (hp_ <= 0) {
-                // ⬇️  修正：第1形態のHPが0になった時の処理！
+                // ⬇️第1形態のHPが0になった時の処理！
                 if (phase_ == 1) {
                     isTransitioning_ = true;
                     transitionTimer_ = 0; // タイマーをリセット
 
-                    // ⬇️  追加：第1形態の攻撃をその場で強制終了させる（お片付け）
+                    // 第1形態の攻撃をその場で強制終了させる
                     leftPunchState_ = PunchState::kIdle;
                     rightPunchState_ = PunchState::kIdle;
                     isShockwaveActive_ = false;
@@ -69,7 +68,7 @@ public:
                     isDying_ = true;
                     deathTimer_ = 0;
 
-                    // ⬇️ ★ 追加：すべての攻撃をその場で強制終了させる（お片付け）
+                    // すべての攻撃をその場で強制終了させる（お片付け）
                     leftPunchState_ = PunchState::kIdle;
                     rightPunchState_ = PunchState::kIdle;
                     isShockwaveActive_ = false;
@@ -118,7 +117,7 @@ public:
     Vector3 GetExplosionScale() const { return explosionScale_; }
 
 
-    bool isAppearing_ = true;      // 最初は「登場中」からスタートさせる！r
+    bool isAppearing_ = true;     
     int fallDelayTimer_ = 0;
     int GetAppearanceTimer() const { return appearanceTimer_; }
 

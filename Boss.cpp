@@ -1,23 +1,24 @@
 #include "Boss.h"
 #include "Object3dCommon.h"
-#include "ModelManager.h" // これを超重要追加！
+#include "ModelManager.h" 
 #include "Camera.h"
-#include "Player.h" // プレイヤーの情報を読み込む！
-#include <cmath>    // 三平方の定理のルート計算に必要！
+#include "Player.h"
+#include "ParticleManager.h"
+#include <stdlib.h>
+#include <cmath>   
 
 
-// 引数から ModelCommon を消してスッキリさせました
 void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
 	// ==========================================
 	// 1. 胴体（Body）の準備
 	// ==========================================
-	// ① マネージャーに名前を教えて読み込んでもらうだけ！
+	
 	ModelManager::GetInstance()->LoadModel("alphaBoss.obj");
 
 	objectBody_ = new Object3d();
 	objectBody_->Initialize(object3dCommon);
-	// ② オブジェクトに文字列を渡すだけでセット完了！
+
 	objectBody_->SetModel("alphaBoss.obj");
 
 
@@ -44,14 +45,13 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// ==========================================
 	 // 4. サイズと初期位置の設定
 	 // ==========================================
-	 // ① サイズを小さくする（0.1倍など、ちょうどいいサイズを探します）
-	Vector3 bossScale = { 0.5f, 0.5f, 0.5f }; // ここを 0.5f や 0.05f などに変えて調整
+	 
+	Vector3 bossScale = { 0.5f, 0.5f, 0.5f };
 	objectBody_->SetScale(bossScale_);
 	objectLeftArm_->SetScale(bossScale_);
 	objectRightArm_->SetScale(bossScale_);
 
 	// ② カメラから少し離れた位置（奥）に置く
-	// 今カメラが Z: -10.0f にいるので、ボスを Z: 10.0f くらいに置くと全体が見えやすいです
 	bossPos_ = { 0.0f,150.0f, 10.0f };
 	objectBody_->SetTranslate(bossPos_);
 	objectLeftArm_->SetTranslate({ bossPos_.x - 0.5f, bossPos_.y, bossPos_.z });
@@ -59,11 +59,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// ==========================================
 	// 5. 向き（回転）の設定
 	// ==============================,============
-	// { X軸の回転, Y軸の回転, Z軸の回転 } です。6
-	// コマみたいに横を向かせたい（旋回させたい）場合は、真ん中の「Y」の値をいじります。
 
-	// 例：180度回して反対を向かせる
-	//Vector3 bossRotate = { 0.0f, 1.57f, 0.0f };
 	objectBody_->SetRotate(bossRotate_);
 	objectLeftArm_->SetRotate(bossRotate_);
 	objectRightArm_->SetRotate(bossRotate_);
@@ -71,7 +67,6 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	float armOffset = 2.0f;
 
 	// 左腕はマイナス方向、右腕はプラス方向にズラす
-	// もし前後（胸と背中）に腕がいってしまった場合の書き方
 	Vector3 leftArmPos = { bossPos_.x - armOffset, bossPos_.y, bossPos_.z };
 	Vector3 rightArmPos = { bossPos_.x + armOffset, bossPos_.y, bossPos_.z };
 
@@ -86,7 +81,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// ==========================================
 	// 6. 衝撃波の準備
 	// ==========================================
-	// plane.obj や cube.obj に戻す！
+	
 	ModelManager::GetInstance()->LoadModel("wave.obj");
 
 	shockwave_ = new Object3d();
@@ -98,7 +93,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// ==========================================
 	// 7. ミサイルの準備
 	// ==========================================
-	// ※とりあえず既存の plane.obj を使いますが、後で missile.obj などに変えられます！
+	
 	ModelManager::GetInstance()->LoadModel("missile.obj");
 
 	for (int i = 0; i < kMaxMissiles; i++) {
@@ -115,7 +110,7 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
 	explosion_ = new Object3d();
 	explosion_->Initialize(object3dCommon);
-	explosion_->SetModel("explosion.obj"); // 波紋のように広がる円（平面）
+	explosion_->SetModel("explosion.obj");
 	explosion_->SetCamera(camera);
 
 	// ==========================================
@@ -138,20 +133,19 @@ void Boss::Update(Player* player) {
 	if (isDead_) { return; }
 
 	// ==========================================
-	// ★ 追加：ボス撃破時の「やられ演出・崩れ落ち」
+	// ボス撃破時の「やられ演出・崩れ落ち」
 	// ==========================================
 	if (isDying_) {
 		deathTimer_++;
 
-		// タイマーが90（1.5秒）を超えたら、最後の正面カメラになっているはずなので崩れ落ちる！
 		if (deathTimer_ > 240) {
-			bossPos_.y -= 0.05f; // ズズズ…と地面に沈んでいく（崩れ落ちる表現）
+			bossPos_.y -= 0.05f; // ズズズ…と地面に沈んでいく
 
 			// 少し画面を揺らすための小刻みな震え（痙攣）
 			bossPos_.x += ((rand() % 10) / 10.0f - 0.5f) * 0.2f;
 		}
 
-		// 240フレーム（4秒）経ったら、完全に消滅（ゲームクリア！）
+		// 300フレーム（5秒）経ったら、完全に消滅（ゲームクリア！）
 		if (deathTimer_ > 300) {
 			isDead_ = true;
 			isDying_ = false;
@@ -215,19 +209,19 @@ void Boss::Update(Player* player) {
 	}
 
 	// ==========================================
-	// ★ 追加：登場演出（ゲーム開始直後）
+	// 登場演出（ゲーム開始直後）
 	// ==========================================
 	if (isAppearing_) {
 
-		// ⬇️ ★ 追加：まずは指定した時間（例：120フレーム ＝ 約2秒）だけ上空で待機する！
+		//指定した時間だけ上空で待機する！
 		if (fallDelayTimer_ < 300) {
 			fallDelayTimer_++;
 		}
-		// 待機時間が終わったら、いよいよ落下開始！
+		// 待機時間が終わったら、落下開始
 		else {
 			// 1. 猛スピードで落下
 			if (bossPos_.y > 0.0f) {
-				bossPos_.y -= 2.0f; // 落下スピード（速い！）
+				bossPos_.y -= 2.0f; // 落下スピード
 
 				// 地面に激突した瞬間！
 				if (bossPos_.y <= 0.0f) {
@@ -241,11 +235,11 @@ void Boss::Update(Player* player) {
 					OutputDebugStringA("BOSS LANDED!!!\n");
 				}
 			}
-			// 2. 着地後、少しの間ドヤ顔で待機（タイマーを進める）
+			// 2. 着地後、待機（タイマーを進める）
 			else {
 				appearanceTimer_++;
 
-				// 90フレーム（1.5秒）待ったら、いよいよ戦闘開始！
+				// 待ったら、戦闘開始
 				if (appearanceTimer_ >= 90) {
 					isAppearing_ = false; // 登場状態を解除
 					attackTimer_ = 0;     // 攻撃タイマーを0からスタート！
@@ -256,7 +250,7 @@ void Boss::Update(Player* player) {
 	}
 
 	// ==========================================
-	// ① 形態変化（第1 → 第2）の演出中！
+	// 形態変化（第1 → 第2）の演出中！
 	// ==========================================
 	else if (isTransitioning_) {
 		transitionTimer_++;
@@ -320,7 +314,7 @@ void Boss::Update(Player* player) {
 		}
 	}
 	// ==========================================
-	// ③ 第2形態の動き（暴走モード：連続ジャンプ衝撃波！）
+	// 第2形態の動き（暴走モード：連続ジャンプ衝撃波）
 	// ==========================================
 	else if (phase_ == 2) {
 		// 攻撃のテンポを管理
@@ -334,7 +328,7 @@ void Boss::Update(Player* player) {
 		if (attackTimer_ == 10) { // ジャンプ攻撃の少し前に撃つ！
 			for (int i = 0; i < kMaxMissiles; i++) {
 				isMissileActive_[i] = true;
-				missileHomingTimer_[i] = 75; //  90フレーム（1.5秒間）だけホーミングする！
+				missileHomingTimer_[i] = 75; // ホーミングする
 
 				// 発射位置：ボスの少し上、左右に振り分ける
 				float offsetX = -3.0f + (i * 2.0f); // iが増えるごとに右にズレる
@@ -389,7 +383,7 @@ void Boss::Update(Player* player) {
 		// ==========================================
 		// 攻撃2：ブラックホール（プレイヤーを吸引）
 		// ==========================================
-		// タイマーが150〜330の間（約3秒間）、強烈に吸い寄せる！
+		// タイマーが150〜330の間（約3秒間）、強烈に吸い寄せる
 		if (attackTimer_ >= 150 && attackTimer_ < 330) {
 			isSuctionActive_ = true;
 
@@ -400,8 +394,7 @@ void Boss::Update(Player* player) {
 				float dist = std::sqrt(dx * dx + dz * dz);
 
 				if (dist > 0.1f) {
-					// ★ プレイヤーの逃げる速度（0.1f）より少しだけ遅い力（0.08f）で引っ張る
-					// これにより「必死にSキーで走ればギリギリ逃げられる」絶妙なバランスになります！
+				
 					float suctionPower = 0.08f;
 					pPos.x += (dx / dist) * suctionPower;
 					pPos.z += (dz / dist) * suctionPower;
@@ -648,7 +641,7 @@ void Boss::Update(Player* player) {
 				}
 			}
 			// ※ タイマーが0になったら上の if文 を無視するので、速度(Velocity)が更新されず、
-			//    そのままの角度で「直進」し続けます！（＝ホーミング切れ）
+			//    そのままの角度で「直進」し続ける（＝ホーミング切れ）
 
 			// 速度を足して移動させる
 			missilePos_[i].x += missileVelocity_[i].x;
@@ -684,7 +677,7 @@ void Boss::Update(Player* player) {
 	float shakeX = 0.0f;
 	float shakeY = 0.0f;
 
-	// ⬇️ ★ 追加：形態変化中なら、ボス自身を震わせる！
+	// 形態変化中なら、ボス自身を震わせる！
 	if (isTransitioning_) {
 		if (transitionTimer_ < 60) {
 			// 前半の1秒：小刻みにプルプル震える
@@ -701,7 +694,7 @@ void Boss::Update(Player* player) {
 	objectLeftArm_->SetScale(bossScale_);
 	objectRightArm_->SetScale(bossScale_);
 
-	// ★ 計算した震え（shakeX, shakeY）を足して描画する！
+	
 	objectBody_->SetTranslate({ bossPos_.x + shakeX, bossPos_.y + yOffset + shakeY, bossPos_.z });
 	objectLeftArm_->SetTranslate({ leftArmPos_.x + shakeX, leftArmPos_.y + yOffset + shakeY, leftArmPos_.z });
 	objectRightArm_->SetTranslate({ rightArmPos_.x + shakeX, rightArmPos_.y + yOffset + shakeY, rightArmPos_.z });

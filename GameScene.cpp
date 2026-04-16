@@ -30,7 +30,6 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
     boss_ = new Boss();
     if (boss_) {
-        // ※ModelCommonは一旦 nullptr で渡しておきます
         boss_->Initialize(object3dCommon_, camera);
     }
 
@@ -77,7 +76,6 @@ void GameScene::Update(Player* player) {
     if (player && boss_) {
 
         // =======================================================
-        // ⬇️ ★ 新規追加：ここに「大きなフタ」をする！
         // 登場中（isAppearing_）でも、やられ中（IsDying）でもない時だけ判定！
         // =======================================================
         if (!boss_->isAppearing_ && !boss_->IsDying() && !boss_->IsTransitioning()) {
@@ -228,7 +226,7 @@ void GameScene::Update(Player* player) {
                     float dist = std::sqrt(dx * dx + dz * dz);
 
                     if (dist < boss_->GetSphereRadius()) {
-                        playerSpeed = 0.03f; // スフィア内では大幅にスピードダウン！
+                        playerSpeed = 0.03f; // スフィア内では大幅にスピードダウン
                         break;
                     }
                 }
