@@ -161,4 +161,13 @@ private:
 	void UpdateChargeParticles();
 
 	bool isChargeCompleted_ = false;
+
+	bool isSliding_ = false;             // スライド中かどうか
+	int slideTimer_ = 0;                 // スライドの残りフレーム数
+	const int SLIDE_DURATION = 15;       // スライドを持続するフレーム数
+	Vector3 slideDirection_ = {0, 0, 0}; // スライドする方向
+	float slideSpeed_ = 0.4f;            // スライド中の移動速度
+	
+	int slideCooldownTimer_ = 0;         // 連続スライドを防ぐクールダウン
+	const int SLIDE_COOLDOWN = 30;       // 再度スライドできるまでのフレーム数
 };

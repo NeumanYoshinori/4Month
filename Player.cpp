@@ -73,7 +73,7 @@ void Player::Update(Input* input) {
 	}
 
 	// ==========================================
-	// 2. プレイヤーの移動（WASDによるストレイフ移動）
+	// 2. プレイヤーの移動
 	// ==========================================
 	if (input) {
 		float speed = 0.1f;
@@ -82,45 +82,92 @@ void Player::Update(Input* input) {
 		Vector3 forward = { std::sin(transform.rotate.y), 0.0f, std::cos(transform.rotate.y) };
 		Vector3 right = { std::cos(transform.rotate.y), 0.0f, -std::sin(transform.rotate.y) };
 
-		// W・Sキーで正面・後ろへ移動
-		if (input->PushKey(DIK_W)) {
-			transform.translate.x += forward.x * speed;
-			transform.translate.z += forward.z * speed;
+		// --- スライドのクールダウン更新 ---
+		if (slideCooldownTimer_ > 0) {
+			slideCooldownTimer_--;
 		}
-		if (input->PushKey(DIK_S)) {
-			transform.translate.x -= forward.x * speed;
-			transform.translate.z -= forward.z * speed;
+
+		// 【変更】isGrounded の条件を外し、空中でもスライドできるようにしました
+		if (!isGrounded && !isSliding_ && slideCooldownTimer_ <= 0 && input->TriggerKey(DIK_SPACE)) {
+
+			// 入力されているキーの方向を計算
+			Vector3 inputDir = { 0.0f, 0.0f, 0.0f };
+			bool hasDirectionInput = false; // 【追加】方向キーが押されているかのフラグ
+
+			if (input->PushKey(DIK_W)) { inputDir.x += forward.x; inputDir.z += forward.z; hasDirectionInput = true; }
+			if (input->PushKey(DIK_S)) { inputDir.x -= forward.x; inputDir.z -= forward.z; hasDirectionInput = true; }
+			if (input->PushKey(DIK_A)) { inputDir.x -= right.x; inputDir.z -= right.z; hasDirectionInput = true; }
+			if (input->PushKey(DIK_D)) { inputDir.x += right.x; inputDir.z += right.z; hasDirectionInput = true; }
+
+			// 【変更】方向キーが入力されている時だけスライドを発動する
+			if (hasDirectionInput) {
+				// 斜め入力時に速くなりすぎないようベクトルを正規化（長さを1にする）
+				float len = std::sqrt(inputDir.x * inputDir.x + inputDir.z * inputDir.z);
+				if (len > 0.0f) {
+					inputDir.x /= len;
+					inputDir.z /= len;
+				}
+
+				// スライド状態に突入
+				slideDirection_ = inputDir;
+				isSliding_ = true;
+				slideTimer_ = SLIDE_DURATION;
+
+				// 空中スライド時に落下速度をリセットして、滞空するようにするなら以下を有効にする
+				// velocityY = 0.0f; 
+			}
 		}
-		// A・Dキーで左・右へカニ歩き（ストレイフ）移動
-		if (input->PushKey(DIK_A)) {
-			transform.translate.x -= right.x * speed;
-			transform.translate.z -= right.z * speed;
+
+		// --- 実際の移動処理 ---
+		if (isSliding_) {
+			// スライド中の高速移動（通常の入力は無視される）
+			transform.translate.x += slideDirection_.x * slideSpeed_;
+			transform.translate.z += slideDirection_.z * slideSpeed_;
+
+			slideTimer_--;
+			if (slideTimer_ <= 0) {
+				isSliding_ = false; // スライド終了
+				slideCooldownTimer_ = SLIDE_COOLDOWN; // クールダウン開始
+			}
 		}
-		if (input->PushKey(DIK_D)) {
-			transform.translate.x += right.x * speed;
-			transform.translate.z += right.z * speed;
+		else {
+			// 通常の移動（スライドしていない時だけWASDで動ける）
+			if (input->PushKey(DIK_W)) {
+				transform.translate.x += forward.x * speed;
+				transform.translate.z += forward.z * speed;
+			}
+			if (input->PushKey(DIK_S)) {
+				transform.translate.x -= forward.x * speed;
+				transform.translate.z -= forward.z * speed;
+			}
+			if (input->PushKey(DIK_A)) {
+				transform.translate.x -= right.x * speed;
+				transform.translate.z -= right.z * speed;
+			}
+			if (input->PushKey(DIK_D)) {
+				transform.translate.x += right.x * speed;
+				transform.translate.z += right.z * speed;
+			}
 		}
 
 		// 重力を加算して落下させる
-		velocityY -= gravity;
+		if (!isSliding_) { velocityY -= gravity; }
+		//velocityY -= gravity;
 
 		// スペースキーが押された瞬間 ＆ 地面にいる時だけジャンプ！
-		if (input->TriggerKey(DIK_SPACE) && isGrounded) {
+		if (input->TriggerKey(DIK_SPACE) && isGrounded && !isSliding_) { // スライド中はジャンプ不可にする
 			velocityY = jumpSpeed;
 			isGrounded = false; // 空中判定にする
 		}
 
-		
 		// Y座標に速度（落下・ジャンプ）を足し込む
 		transform.translate.y += velocityY;
 
-		// ... (この下に既存の地面との当たり判定が続く) ...
 
 		// Y座標に速度（落下・ジャンプ）を足し込む
 		transform.translate.y += velocityY;
 
-		// 簡易的な地面との当たり判定 (Y=0.0f を地面とする場合)z
-		// ※もしレイキャストやAABBの処理を既に作っていた場合は、ここをそちらに差し替えてください
+		// 簡易的な地面との当たり判定
 		float groundHeight = 0.0f;
 
 		if (transform.translate.y <= groundHeight) {
@@ -130,7 +177,8 @@ void Player::Update(Input* input) {
 			velocityY = 0.0f;
 			// 地面についたフラグをON
 			isGrounded = true;
-		} else {
+		}
+		else {
 			// 地面より上にいるなら空中
 			isGrounded = false;
 		}
@@ -225,7 +273,7 @@ void Player::Update(Input* input) {
 	}
 
 	UpdateChargeParticles();
-	
+
 	// ==========================================
 	// 3. カメラの配置（プレイヤーを中央に捉える）
 	// ==========================================
@@ -401,7 +449,8 @@ void Player::FireBullet(bool isCharged) {
 		newBullet->lifeTimer = 120;
 		newBullet->object3d->SetScale({ 1.5f, 1.5f, 1.5f });
 		newBullet->velocity = { realShootDir.x * speed, realShootDir.y * speed, realShootDir.z * speed };
-	} else {
+	}
+	else {
 		// 通常ショット
 		float speed = 0.8f;
 		newBullet->radius = 0.5f;
