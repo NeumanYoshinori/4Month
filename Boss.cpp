@@ -145,7 +145,7 @@ void Boss::Update(Player* player) {
 			bossPos_.x += ((rand() % 10) / 10.0f - 0.5f) * 0.2f;
 		}
 
-		// 300フレーム（5秒）経ったら、完全に消滅（ゲームクリア！）
+		// 300フレーム（秒）経ったら、完全に消滅（ゲームクリア！）
 		if (deathTimer_ > 300) {
 			isDead_ = true;
 			isDying_ = false;
@@ -248,6 +248,8 @@ void Boss::Update(Player* player) {
 			}
 		}
 	}
+
+
 
 	// ==========================================
 	// 形態変化（第1 → 第2）の演出中！
@@ -469,6 +471,7 @@ void Boss::Update(Player* player) {
 					spheres_[i]->SetTranslate(spherePos_[i]);
 					spheres_[i]->SetScale({ 1.0f, 1.0f, 1.0f }); // 範囲に合わせて大きく
 					Vector4 domeColor = { 0.7f, 0.0f, 1.0f, 0.4f }; // 鮮やかな紫、透明度40%
+					
 					spheres_[i]->Update();
 				}
 			}
@@ -479,7 +482,26 @@ void Boss::Update(Player* player) {
 	// ==========================================
 	  // 全形態共通：腕の移動処理
 	  // ==========================================
-	Vector3 leftShoulder = { bossPos_.x - 2.5f, bossPos_.y, bossPos_.z };
+	// ==========================================
+	// 自機の方を向く処理
+	// ==========================================
+	if (player && stunTimer_ <= 0) {
+		Vector3 pPos = player->GetTranslate();
+		float dx = pPos.x - bossPos_.x;
+		float dz = pPos.z - bossPos_.z;
+		bossRotate_.y = std::atan2(dx, dz);
+	}
+
+	// ==========================================
+	// 全形態共通：腕の移動処理
+	// ==========================================
+	// 肩の位置をボスの回転に合わせて計算
+	float cosY = std::cos(bossRotate_.y);
+	float sinY = std::sin(bossRotate_.y);
+	float shoulderOffsetX = cosY * 2.5f;
+	float shoulderOffsetZ = -sinY * 2.5f; // ※もし腕が前後にズレる場合は +sinY に直してください
+
+	Vector3 leftShoulder = { bossPos_.x - shoulderOffsetX, bossPos_.y, bossPos_.z - shoulderOffsetZ };
 	switch (leftPunchState_) {
 	case PunchState::kIdle: leftArmPos_ = leftShoulder; break;
 	case PunchState::kPunch:
@@ -513,7 +535,7 @@ void Boss::Update(Player* player) {
 	}
 	}
 
-	Vector3 rightShoulder = { bossPos_.x + 2.5f, bossPos_.y, bossPos_.z };
+	Vector3 rightShoulder = { bossPos_.x + shoulderOffsetX, bossPos_.y, bossPos_.z + shoulderOffsetZ };
 	switch (rightPunchState_) {
 	case PunchState::kIdle: rightArmPos_ = rightShoulder; break;
 	case PunchState::kPunch:
@@ -668,6 +690,25 @@ void Boss::Update(Player* player) {
 			}
 		}
 	}
+
+	// ==========================================
+	// 常にプレイヤーの方向を向かせる処理
+	// ==========================================
+	// 1. プレイヤーの座標を取得
+	Vector3 pPos = player->GetTranslate(); // ※関数名はPlayerクラスに合わせてください
+
+	// 2. ボスからプレイヤーへの距離（XとZの差分）を計算
+	float dx = pPos.x - bossPos_.x;
+	float dz = pPos.z - bossPos_.z;
+
+	// 3. atan2で角度を計算し、ボスのY軸回転に代入
+	bossRotate_.y = std::atan2(dx, dz);
+	// ==========================================
+
+
+	// ⬇️ この下は元々書いてあるコードです
+	objectBody_->SetTranslate(bossPos_);
+	objectBody_->SetRotate(bossRotate_);
 
 	// ==========================================
 	// 最後に座標をセット
