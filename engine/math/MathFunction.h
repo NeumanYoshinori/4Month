@@ -63,5 +63,8 @@ namespace MathFunction {
 	float Length(const Vector3& v);
 
 	bool IsCollision(const AABB& aabb, const Vector3& point);
+
+	// 正規化
+	Vector3 Normalize(const Vector3& v);
 }
 

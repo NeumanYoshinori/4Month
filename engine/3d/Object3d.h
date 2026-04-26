@@ -28,6 +28,21 @@ public: // メンバ関数
 		float intensity;
 	};
 
+	// カメラ
+	struct CameraForGPU {
+		Vector3 worldPosition;
+	};
+
+	// ポイントライト
+	struct PointLight {
+		Vector4 color;
+		Vector3 position;
+		float intensity;
+		float radius;
+		float decay;
+		float padding[2];
+	};
+
 	// 初期化
 	void Initialize(Object3dCommon* object3dCommon);
 
@@ -56,12 +71,25 @@ public: // メンバ関数
 	// setter
 	void SetCamera(Camera* camera) { camera_ = camera; }
 
+	void DebugDirectionalLight();
+
+	void DebugPointLight();
+
+	void SetDirIntensity(float intensity) { directionalLightData->intensity = intensity; }
+	void SetPointIntensity(float intensity) { pointLightData->intensity = intensity; }
+
 private:
 	// 座標変換行列データ作成
 	void CreateTransformationMatrixData();
 
 	// 平行光源データ作成
 	void CreateDirectionalLight();
+
+	// カメラデータ作成
+	void CreateCameraData();
+
+	// ポイントライト作成
+	void CreatePointLight();
 
 	// Object3DCommonのポインタ
 	Object3dCommon* object3dCommon_ = nullptr;
@@ -78,6 +106,16 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = nullptr;
 	// バッファリソース内のデータを指すポインタ
 	DirectionalLight* directionalLightData = nullptr;
+
+	// バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource = nullptr;
+	// バッファリソース内のデータを指すポインタ
+	CameraForGPU* cameraData = nullptr;
+
+	// バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> pointLightResource = nullptr;
+	// バッファリソース内のデータを指すポインタ
+	PointLight* pointLightData = nullptr;
 
 	// Transform
 	Transform transform;

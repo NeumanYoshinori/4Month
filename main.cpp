@@ -388,21 +388,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//field->Update();
 		//field->SetRotate(rotation);
 
-		gameScene->Update(player);
-
 
 
 		// 開発用UIの処理
 		//ImGui::ShowDemoWindow();
 		imGuiManager->Begin();
 
-#ifdef USE_IMGUI
-		// デモウィンドウの表示オン
-		ImGui::ShowDemoWindow();
-
-		ImGui::Begin("Settings");
-		ImGui::End();
-#endif
+		gameScene->Update(player);
 
 		imGuiManager->End();
 

@@ -1,5 +1,6 @@
 #include "Object3d.h"
 #include "Object3dCommon.h"
+#include "ImGuiManager.h"
 
 using namespace std;
 using namespace MathFunction;
@@ -21,6 +22,12 @@ void Object3d::Initialize(Object3dCommon* object3dCommon) {
 	
 	// デフォルトカメラをセットする
 	camera_ = object3dCommon_->GetDefaultCamera();
+
+	// カメラデータ作成
+	CreateCameraData();
+
+	// ポイントライト作成
+	CreatePointLight();
 }
 
 void Object3d::Update() {
@@ -35,6 +42,8 @@ void Object3d::Update() {
 
 	transformationMatrixData->WVP = worldViewProjectionMatrix;
 	transformationMatrixData->World = worldMatrix;
+
+	pointLightData->position = transform.translate;
 }
 
 void Object3d::Draw() {
@@ -45,6 +54,10 @@ void Object3d::Draw() {
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	// 平行光源CBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	// カメラのCBufferの場所を設定
+	commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
+	// ポイントライトのCBufferの場所を設定
+	commandList->SetGraphicsRootConstantBufferView(5, pointLightResource->GetGPUVirtualAddress());
 
 	// 3Dモデルが割り当てられていれば描画する
 	if (model_) {
@@ -55,6 +68,24 @@ void Object3d::Draw() {
 void Object3d::SetModel(const std::string& filePath) {
 	// モデルを検索
 	model_ = ModelManager::GetInstance()->FindModel(filePath);
+}
+
+void Object3d::DebugDirectionalLight() {
+#ifdef USE_IMGUI
+	// 開発用UIの処理
+	ImGui::ColorEdit3("DirLightColor", &directionalLightData->color.x);
+	ImGui::DragFloat3("DirLightDirection", &directionalLightData->direction.x, 0.01f, -10.0f, 10.0f);
+	ImGui::DragFloat("DirIntensity", &directionalLightData->intensity, 0.01f);
+#endif
+}
+
+void Object3d::DebugPointLight() {
+#ifdef USE_IMGUI
+	// 開発用UIの処理
+	ImGui::ColorEdit3("PointLightColor", &pointLightData->color.x);
+	ImGui::DragFloat3("PointLightPosition", &pointLightData->position.x, 0.01f, -10.0f, 10.0f);
+	ImGui::DragFloat("PointIntensity", &pointLightData->intensity, 0.01f);
+#endif
 }
 
 void Object3d::CreateTransformationMatrixData() {
@@ -78,6 +109,33 @@ void Object3d::CreateDirectionalLight() {
 
 	// デフォルト値はとりあえず以下のようにしておく
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData->intensity = 1.0f;
+	directionalLightData->direction = Normalize({ 0.0f, 1.0f, 0.0f });
+	directionalLightData->intensity = 0.0f;
+}
+
+void Object3d::CreateCameraData() {
+	// カメラリソースを作る
+	cameraResource = dxBase_->CreateBufferResource(sizeof(CameraForGPU));
+
+	// 書き込むためのアドレスを作る
+	cameraResource->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
+
+	if (camera_) {
+		cameraData->worldPosition = camera_->GetTranslate();
+	}
+}
+
+void Object3d::CreatePointLight() {
+	// ポイントライトリソースを作る
+	pointLightResource = dxBase_->CreateBufferResource(sizeof(PointLight));
+
+	// 書き込むためのアドレスを作る
+	pointLightResource->Map(0, nullptr, reinterpret_cast<void**>(&pointLightData));
+
+	// デフォルト値はとりあえず以下のようにしておく
+	pointLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	pointLightData->position = { 0.0f, 2.0f, 0.0f };
+	pointLightData->intensity = 1.0f;
+	pointLightData->radius = 5.0f;
+	pointLightData->decay = 1.0f;
 }

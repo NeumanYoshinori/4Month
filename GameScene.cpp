@@ -2,6 +2,7 @@
 #include "ModelManager.h"
 #include "Player.h"
 #include <cmath>
+#include "ImGuiManager.h"
 
 // 引数を受け取るように変更
 void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
@@ -59,6 +60,12 @@ void GameScene::Update(Player* player) {
 
     if (field_) {
         field_->Update();
+
+#ifdef USE_IMGUI
+        ImGui::Begin("Settings");
+        field_->DebugDirectionalLight();
+        ImGui::End();
+#endif
     }
 
     // 3. ボスの更新処理（移動や攻撃ロジック）を呼ぶ

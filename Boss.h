@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object3d.h"
+#include "ParticleManager.h"
 
 
 class Object3dCommon;
@@ -181,4 +182,6 @@ private:
     Object3d* explosion_ = nullptr;                 // 爆発の3Dモデル
     bool isExplosionActive_ = false;                // 爆発中かどうか
     Vector3 explosionScale_ = { 0.1f, 0.1f, 0.1f }; // 爆発の広がり具合
+
+    ParticleManager* particleManager = ParticleManager::GetInstance();
 };
