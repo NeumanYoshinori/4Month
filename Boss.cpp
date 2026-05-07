@@ -82,11 +82,11 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// 6. 衝撃波の準備
 	// ==========================================
 	
-	ModelManager::GetInstance()->LoadModel("wave.obj");
+	ModelManager::GetInstance()->LoadModel("shockwave.obj");
 
 	shockwave_ = new Object3d();
 	shockwave_->Initialize(object3dCommon);
-	shockwave_->SetModel("wave.obj");
+	shockwave_->SetModel("shockwave.obj");
 	shockwave_->SetCamera(camera);
 
 
@@ -227,10 +227,15 @@ void Boss::Update(Player* player) {
 				if (bossPos_.y <= 0.0f) {
 					bossPos_.y = 0.0f;
 
-					// ドスーン！と着地衝撃波を出す
-				  /*  isShockwaveActive_ = true;
-					shockwaveScale_ = { 15.0f, 0.1f, 1.5f };
-					shockwavePos_ = { bossPos_.x, 0.01f, bossPos_.z };*/
+					//// 着地したら衝撃波！
+					//isShockwaveActive_ = true;
+					//shockwavePos_ = { bossPos_.x, 0.01f, bossPos_.z }; // 位置はボスの足元
+
+					//if (phase_ == 1) {
+					//	shockwaveScale_ = { 20.0f, 0.1f, 2.0f }; // 第1形態：横に広い直線の波
+					//} else {
+					//	shockwaveScale_ = { 0.1f, 0.1f, 0.1f };  // 第2形態：ここから円状に広がるので初期サイズは極小
+					//}
 
 					OutputDebugStringA("BOSS LANDED!!!\n");
 				}
@@ -385,8 +390,8 @@ void Boss::Update(Player* player) {
 		// ==========================================
 		// 攻撃2：ブラックホール（プレイヤーを吸引）
 		// ==========================================
-		// タイマーが150〜330の間（約3秒間）、強烈に吸い寄せる
-		if (attackTimer_ >= 150 && attackTimer_ < 330) {
+		// タイマーが150〜450の間（約5秒間）、強烈に吸い寄せる
+		if (attackTimer_ >= 150 && attackTimer_ < 450) {
 			isSuctionActive_ = true;
 
 			if (player) {
@@ -397,7 +402,7 @@ void Boss::Update(Player* player) {
 
 				if (dist > 0.1f) {
 				
-					float suctionPower = 0.08f;
+					float suctionPower = 0.12f;
 					pPos.x += (dx / dist) * suctionPower;
 					pPos.z += (dz / dist) * suctionPower;
 
@@ -412,8 +417,8 @@ void Boss::Update(Player* player) {
 		// ==========================================
 		// 攻撃3：大爆発（足元範囲ドカン！）
 		// ==========================================
-		// 吸引が終わった瞬間（330）に爆発スタート！
-		if (attackTimer_ == 330) {
+		// 吸引が終わった瞬間（450）に爆発スタート！
+		if (attackTimer_ == 450) {
 			isExplosionActive_ = true;
 			explosionScale_ = { 0.1f, 0.1f, 0.1f };
 		}
@@ -425,7 +430,7 @@ void Boss::Update(Player* player) {
 			explosionScale_.y = 1.0f; // 平面なので高さは固定
 
 			// 最大サイズ（15.0f）まで広がったら終了
-			if (explosionScale_.x > 7.5f) {
+			if (explosionScale_.x > 15.0f) {
 				isExplosionActive_ = false;
 				
 				//attackTimer_ = -120;
@@ -444,7 +449,7 @@ void Boss::Update(Player* player) {
 		for (int i = 0; i < kMaxSpheres; i++) { if (isSphereActive_[i]) anyActive = true; }
 
 		
-		if (!anyActive && attackTimer_ == 400) {
+		if (!anyActive && attackTimer_ == 500) {
 			for (int i = 0; i < kMaxSpheres; i++) {
 				isSphereActive_[i] = true;
 				sphereLifeTimer_[i] = 300;
@@ -597,23 +602,46 @@ void Boss::Update(Player* player) {
 
 			// 着地したら衝撃波！
 			isShockwaveActive_ = true;
-			shockwaveScale_ = { 20.0f, 0.1f, 2.0f };
-			shockwavePos_ = { bossPos_.x, 0.01f, bossPos_.z };
+
+			// 地面に埋もれないように 0.5f 浮かせた位置からスタート
+			shockwavePos_ = { bossPos_.x, 0.5f, bossPos_.z };
+
+			// 形態によって「最初の形」を分ける！
+			if (phase_ == 1) {
+				shockwaveScale_ = { 20.0f, 1.0f, 2.0f }; // 第1形態：今まで通りの横長
+			} else if (phase_ == 2) {
+				shockwaveScale_ = { 0.1f, 1.0f, 0.1f };  // 第2形態：小さな「真円」からスタート！
+			}
 		}
 	}
+	
 	if (isShockwaveActive_) {
-		shockwavePos_.z -= (phase_ == 2) ? 0.6f : 0.1f; // 第2形態は波も速い！(波の速度)
+		if (phase_ == 1) {
+			// ==========================================
+			// 第1形態：奥へ進む直線衝撃波
+			// ==========================================
+			shockwavePos_.z -= 0.1f; // 進むスピード
+			if (shockwavePos_.z < -20.0f) {
+				isShockwaveActive_ = false;
+				isReturningToCenter_ = true; // 第1形態は終わったらすぐ戻る
+			}
+		} else if (phase_ == 2) {
+			// ==========================================
+			// 第2形態：その場から円状に広がる衝撃波
+			// ==========================================
+			// 🌟 修正1：xとzの速度を同じ(0.4f)にして「真円」にする！（これで当たり判定とピッタリ合う）
+			shockwaveScale_.x += 0.4f;
+			shockwaveScale_.z += 0.4f;
+			shockwaveScale_.y = 1.0f;
 
-		if (shockwavePos_.z < -20.0f) {
-			isShockwaveActive_ = false;
-			if (!isAppearing_) {
-				if (phase_ == 2 && jumpCount_ < 3) {
-					// 第2形態：まだ3回ジャンプしてなければ次を飛ぶ！
-					isJumping_ = true;
-					velocityY_ = 0.4f; // 2回目以降は少し低いジャンプ
+			if (shockwaveScale_.x > 40.0f) {
+				isShockwaveActive_ = false;
+
+				// 🌟 修正2：消滅した瞬間に、次のジャンプまでの「間隔（ディレイ）」をセット
+				if (jumpCount_ < 3) {
+					jumpDelayTimer_ = 60; // 60フレーム（約1秒）待機する！ここを増減すると間隔が変わる
 				} else {
-					// 終了して定位置に戻る
-					isReturningToCenter_ = true;
+					isReturningToCenter_ = true; // 3回終わったら戻る
 				}
 			}
 		}
@@ -623,6 +651,16 @@ void Boss::Update(Player* player) {
 		shockwave_->SetRotate({ 0.0f, 0.0f, 0.0f });
 		shockwave_->Update();
 	}
+
+	// ジャンプの間隔（ディレイ）をカウントして、0になったら次のジャンプ開始
+	if (jumpDelayTimer_ > 0) {
+		jumpDelayTimer_--;
+		if (jumpDelayTimer_ <= 0) {
+			isJumping_ = true;
+			velocityY_ = 0.4f; // 次のジャンプの高さ
+		}
+	}
+
 	if (isReturningToCenter_) {
 		bossPos_.z -= (phase_ == 2) ? 0.4f : 0.2f; // 戻るのも速い
 		if (bossPos_.z <= 10.0f) {
@@ -652,7 +690,7 @@ void Boss::Update(Player* player) {
 					float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
 					if (distance > 0.0f) {
-						float speed = 0.2f; // ミサイルの最高速度
+						float speed = 0.4f; // ミサイルの最高速度
 						Vector3 desiredVel = { (dx / distance) * speed, (dy / distance) * speed, (dz / distance) * speed };
 
 
@@ -731,9 +769,28 @@ void Boss::Update(Player* player) {
 		}
 	}
 
-	objectBody_->SetScale(bossScale_);
-	objectLeftArm_->SetScale(bossScale_);
-	objectRightArm_->SetScale(bossScale_);
+	// ==========================================
+		// 吸引中にボスを巨大化させる演出
+		// ==========================================
+	Vector3 finalVisualScale = bossScale_; // 基本の大きさをコピー
+
+	if (isSuctionActive_) {
+		// 吸引開始(150)から終了(450)までの300フレームで変化させる
+		float t = (float)(attackTimer_ - 150) / 300.0f;
+
+		// 1.0(元のサイズ) から 2.0(2倍) まで徐々に大きくする
+		float growFactor = 1.0f + t * 1.0f;
+
+		finalVisualScale.x *= growFactor;
+		finalVisualScale.y *= growFactor;
+		finalVisualScale.z *= growFactor;
+	}
+	// attackTimer_ が 450 になり爆発(isExplosionActive_)が始まると、
+	// isSuctionActive_ は false になるため、自動的に元の bossScale_ に戻ります。
+
+	objectBody_->SetScale(finalVisualScale);
+	objectLeftArm_->SetScale(finalVisualScale);
+	objectRightArm_->SetScale(finalVisualScale);
 
 	
 	objectBody_->SetTranslate({ bossPos_.x + shakeX, bossPos_.y + yOffset + shakeY, bossPos_.z });

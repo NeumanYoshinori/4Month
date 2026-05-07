@@ -85,13 +85,32 @@ void GameScene::Update(Player* player) {
                 Vector3 wavePos = boss_->GetShockwavePos();
                 Vector3 waveScale = boss_->GetShockwaveScale();
 
-                float diffZ = std::abs(pPos.z - wavePos.z);
-                bool isHitZ = (diffZ < waveScale.z);
-                bool isHitY = (pPos.y < waveScale.y);
+                if (boss_->GetPhase() == 1) {
+                    // ==========================================
+                    // 第1形態：直線の箱型判定
+                    // ==========================================
+                    float diffZ = std::abs(pPos.z - wavePos.z);
+                    bool isHitZ = (diffZ < waveScale.z);
+                    bool isHitY = (pPos.y < waveScale.y);
 
-                if (isHitZ && isHitY) {
-                    OutputDebugStringA("Hit Shockwave!!!\n");
-                    player->OnDamage();
+                    if (isHitZ && isHitY) {
+                        OutputDebugStringA("Hit Shockwave (Phase 1)!!!\n");
+                        player->OnDamage();
+                    }
+                } else if (boss_->GetPhase() == 2) {
+                    // ==========================================
+                    // 第2形態：広がるリング状判定
+                    // ==========================================
+                    float dx = pPos.x - wavePos.x;
+                    float dz = pPos.z - wavePos.z;
+                    float dist = std::sqrt(dx * dx + dz * dz);
+
+                    // dist(プレイヤーまでの距離)と波の半径(waveScale.x)の差が 1.5f 以内ならヒット
+                    // pPos.y < 2.0f は、プレイヤーがジャンプして避けた場合は当たらないようにする処理
+                    if (std::abs(dist - waveScale.x) < 0.8f && pPos.y < 1.0f) {
+                        OutputDebugStringA("Hit Shockwave (Phase 2 Ring)!!!\n");
+                        player->OnDamage();
+                    }
                 }
             }
 
