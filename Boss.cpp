@@ -391,7 +391,7 @@ void Boss::Update(Player* player) {
 		// 攻撃2：ブラックホール（プレイヤーを吸引）
 		// ==========================================
 		// タイマーが150〜450の間（約5秒間）、強烈に吸い寄せる
-		if (attackTimer_ >= 150 && attackTimer_ < 450) {
+		if (attackTimer_ >= 180 && attackTimer_ < 450) {
 			isSuctionActive_ = true;
 
 			if (player) {
