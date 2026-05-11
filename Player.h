@@ -79,23 +79,23 @@ public: // メンバ関数
 	const std::list<Bullet*>& GetBullets() const { return bullets_; }
 	void FireBullet(bool isCharged); // 弾を発射する関数
 
-	void OnDamage(int damage = 1) {
-		if (isInvincible_) return; // 無敵時間中なら無視
+	//void OnDamage(int damage = 1) {
+	//	if (isInvincible_) return; // 無敵時間中なら無視
 
-		hp_ -= damage;
-		if (hp_ < 0) hp_ = 0;
+	//	hp_ -= damage;
+	//	if (hp_ < 0) hp_ = 0;
 
-		// ダメージを受けた後の無敵タイマーなどをセットするとよりゲームらしくなります
-		isInvincible_ = true;
-		invincibleTimer_ = 60; // 1秒間無敵など
-	}
+	//	// ダメージを受けた後の無敵タイマーなどをセットするとよりゲームらしくなります
+	//	isInvincible_ = true;
+	//	invincibleTimer_ = 60; // 1秒間無敵など
+	//}
 
 
 	// ==========================================
 	// 自機のHP・ダメージ・死亡処理
 	// ==========================================
-	int hp_ = 10;                 // 自機のHP
-	bool isDead_ = false;        // 死んでいるかどうか
+	//int hp_ = 10;                 // 自機のHP
+	//bool isDead_ = false;        // 死んでいるかどうか
 	int invincibilityTimer_ = 0; // 無敵時間タイマー
 
 	bool IsDead() const { return isDead_; } // 外から死んでいるか確認する用
