@@ -12,7 +12,8 @@
 #include <cmath>
 #include <algorithm>
 #include <list>         
-#include "Object3d.h"   
+#include "Object3d.h" 
+#include "LightManager.h"
 
 
 class Object3dCommon;
@@ -115,6 +116,8 @@ private:
 
 	// カメラ
 	Camera* camera_ = nullptr;
+
+	LightManager* lightManager_ = LightManager::GetInstance();
 
 	float velocityY = 0.0f;   // Y軸方向の速度（落下やジャンプ）
 	float gravity = 0.01f;    // 重力の強さ（毎フレーム下に向かって加速する量）

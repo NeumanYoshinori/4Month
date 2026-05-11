@@ -31,6 +31,8 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	camera_ = object3dCommon_->GetDefaultCamera();
 
 	GetCursorPos(&preMousePos);
+
+	lightManager_->Initialize(dxBase_);
 }
 
 void Player::Update(Input* input) {

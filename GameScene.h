@@ -1,10 +1,10 @@
 #pragma once
 #include "Boss.h" 
+#include "Object3dCommon.h"
 
 // 既存のエンジンのクラス
 class Player;
 class ModelCommon;
-class Object3dCommon;
 class Camera;
 
 class GameScene {
@@ -24,4 +24,6 @@ private:
    
     ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
+
+    LightManager* lightManager_ = LightManager::GetInstance();
 };

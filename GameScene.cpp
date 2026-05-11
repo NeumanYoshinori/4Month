@@ -33,6 +33,8 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
         // ※ModelCommonは一旦 nullptr で渡しておきます
         boss_->Initialize(object3dCommon_, camera);
     }
+
+    lightManager_->Initialize(object3dCommon_->GetDxBase());
 }
 
 void GameScene::Update(Player* player) {
@@ -63,7 +65,7 @@ void GameScene::Update(Player* player) {
 
 #ifdef USE_IMGUI
         ImGui::Begin("Settings");
-        field_->DebugDirectionalLight();
+        lightManager_->DebugPointLight();
         ImGui::End();
 #endif
     }
