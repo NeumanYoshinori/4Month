@@ -55,15 +55,15 @@ void Player::Update(Input* input) {
 		float deltaY = static_cast<float>(currentMousePos.y - centerY);
 
 		// マウスカーソルを画面の中心に強制的に戻す（無限回転のため）
-		//SetCursorPos(centerX, centerY);
+		SetCursorPos(centerX, centerY);
 
 		float sensitivity = 0.003f; // マウス感度
 
 		// 左右のマウス移動でプレイヤー自身（モデル）を回転させる
-		//transform.rotate.y += deltaX * sensitivity;
+		transform.rotate.y += deltaX * sensitivity;
 
 		// 上下のマウス移動でカメラのピッチ（上下角度）を変更する
-		//cameraAngleX += deltaY * sensitivity;
+		cameraAngleX += deltaY * sensitivity;
 
 		// 【上下の制限】（カメラが真上・真下を通り過ぎて裏返らないようにする）
 		float maxPitch = 1.2f;  // 見下ろし限界

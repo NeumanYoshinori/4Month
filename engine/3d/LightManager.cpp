@@ -66,7 +66,7 @@ void LightManager::Initialize(DirectXBase* dxBase) {
 	for (int i = 0; i < kMaxDirectionalLights; i++) {
 		constMap_->directionalLights_[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		constMap_->directionalLights_[i].direction = Normalize({ 0.0f, -1.0f, 0.0f });
-		constMap_->directionalLights_[i].intensity = 0.0f;
+		constMap_->directionalLights_[i].intensity = 1.0f;
 	}
 
 	for (int i = 0; i < kMaxPointLights; i++) {
