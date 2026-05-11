@@ -2,6 +2,8 @@
 #include "ModelManager.h"
 #include "Player.h"
 #include <cmath>
+#include "SceneManager.h"
+#include "Input.h"
 
 // 引数を受け取るように変更
 void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
@@ -39,6 +41,11 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 }
 
 void GameScene::Update(Player* player) {
+
+    if (Input::GetInstance()->TriggerKey(DIK_RETURN)) {
+
+        SceneManager::GetInstance()->ChangeScene("GAMEOVER");
+    }
 
     skydome_->Update(camera_);
 
@@ -408,6 +415,10 @@ void GameScene::Draw() {
     if (boss_) {
         boss_->Draw();
     }
+}
+
+void GameScene::Finalize()
+{
 }
 
 // 忘れがちな後片付け
