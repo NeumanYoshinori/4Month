@@ -22,7 +22,7 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	// 座標変換行列データ作成
 	CreateTransformationMatrixData();
 
-	// 平行光源データ作成
+	// 平行光源データ作成5r
 	CreateDirectionalLight();
 
 	// Transform変数を作る
@@ -31,22 +31,36 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	// デフォルトカメラをセットする
 	camera_ = object3dCommon_->GetDefaultCamera();
 
-	GetCursorPos(&preMousePos);
+	int centerX = 1280 / 2;
+	int centerY = 720 / 2;
+	// ゲーム開始前に、カーソルを強制的に画面の中央にセットしておく
+	SetCursorPos(centerX, centerY);
 }
 
 void Player::Update(Input* input) {
 
+
+	// 無敵タイマーを毎フレーム減らす
+	if (invincibilityTimer_ > 0) {
+		invincibilityTimer_--;
+	}
+
+	// もし死んでいたら、この先の操作や更新を一切やらない（＝ゲームオーバーで操作不能になる）
+	if (isDead_) {
+		return;
+	}
+
+
 	// ==========================================
 	// 1. マウスによる視点・向きの操作
 	// ==========================================
-	if (camera_) {
+	if (camera_ && !isCinematic_) {
 		// 現在のマウス座標を取得
 		POINT currentMousePos;
 		GetCursorPos(&currentMousePos);
 
-		// ★画面の中心座標
-		// ※ご自身のゲーム画面の解像度に合わせて変更してください
-		// 例：1280x720のウィンドウなら 640 と 360 にします
+		// 画面の中心座標
+	
 		int centerX = 1280 / 2;
 		int centerY = 720 / 2;
 
@@ -76,7 +90,7 @@ void Player::Update(Input* input) {
 	// 2. プレイヤーの移動
 	// ==========================================
 	if (input) {
-		float speed = 0.1f;
+		float speed = currentSpeed_;
 
 		// プレイヤーが向いている「正面」と「右」のベクトルを計算
 		Vector3 forward = { std::sin(transform.rotate.y), 0.0f, std::cos(transform.rotate.y) };
@@ -277,8 +291,8 @@ void Player::Update(Input* input) {
 	// ==========================================
 	// 3. カメラの配置（プレイヤーを中央に捉える）
 	// ==========================================
-	if (camera_) {
-		float cameraDistance = 15.0f; // プレイヤーからカメラまでの距離
+	if (camera_ && !isCinematic_) {
+		float cameraDistance = 15.0f;
 
 		// 注視点をプレイヤーの中央（頭の高さなど）に設定する
 		Vector3 targetPos = transform.translate;
@@ -314,7 +328,7 @@ void Player::Update(Input* input) {
 		object3d_->Update();
 	}
 
-	// ★ 修正：transform.translate ではなく drawPos を使って描画する！
+	// transform.translate ではなく drawPos を使って描画する
 	//Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, drawPos);
 	//Matrix4x4 worldViewProjectionMatrix;
 
@@ -327,6 +341,8 @@ void Player::Update(Input* input) {
 
 	//transformationMatrixData->WVP = worldViewProjectionMatrix;
 	//transformationMatrixData->World = worldMatrix;
+
+	currentSpeed_ = 0.1f;
 }
 
 void Player::Draw() {
@@ -349,8 +365,17 @@ void Player::Draw() {
 	if (object3d_) {
 		object3d_->Draw();
 	}
+	// ★ 修正：死んでいない時だけ自機を描画する！
+	if (!isDead_) {
+		// 無敵時間中はチカチカ点滅させる（4フレームごとに表示/非表示を切り替え）
+		if (invincibilityTimer_ == 0 || invincibilityTimer_ % 4 >= 2) {
+			if (object3d_) {
+				object3d_->Draw();
+			}
+		}
+	}
 
-	// ★ 追加：弾の描画
+	// 弾は、自機が死んでいても画面に残って飛んでいくように別で描画
 	for (Bullet* b : bullets_) {
 		b->object3d->Draw();
 	}
@@ -461,6 +486,28 @@ void Player::FireBullet(bool isCharged) {
 
 	bullets_.push_back(newBullet);
 }
+
+
+// ==========================================
+// 自機がダメージを受けた時の処理
+// ==========================================
+void Player::OnDamage() {
+	// すでに死んでいるか、無敵時間中なら何もしない（ノーダメージ）
+	if (isDead_ || invincibilityTimer_ > 0) { return; }
+
+	hp_ -= 1;                    // HPを1減らす
+	invincibilityTimer_ = 60;    // 60フレーム（約1秒）無敵にする！
+
+	OutputDebugStringA("Player Took Damage!!!\n");
+
+	// HPが0になったら死亡！
+	if (hp_ <= 0) {
+		hp_ = 0;
+		isDead_ = true;
+		OutputDebugStringA("PLAYER DEAD!!! GAME OVER\n");
+	}
+}
+
 
 // ==========================================
 // チャージパーティクルを生成する関数

@@ -57,9 +57,13 @@ private:
 	// SRVマネージャ
 	SrvManager* srvManager_ = nullptr;
 
+	// フェンス値
+	uint64_t fenceVal = 0;
+
 	TextureManager() = default;
 	~TextureManager() = default;
 	TextureManager(TextureManager&) = delete;
 	TextureManager& operator=(TextureManager&) = delete;
 };
+
 
