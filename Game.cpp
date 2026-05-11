@@ -24,7 +24,8 @@ void Game::Initialize()
 	input_->Initialize(winApp_);
 
 	// SRVマネージャの初期化
-	srvManager_ = new SrvManager();
+	//srvManager_ = new SrvManager();
+	srvManager_ = SrvManager::GetInstance();
 	srvManager_->Initialize(dxBase_);
 
 	// テクスチャマネジャー
@@ -280,7 +281,7 @@ void Game::Finalize()
 	delete winApp_;
 	delete dxBase_;
 	delete input_;
-	delete srvManager_;
+	//delete srvManager_;
 	delete spriteCommon_;
 	delete object3dCommon_;
 	delete camera_;
