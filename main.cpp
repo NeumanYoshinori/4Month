@@ -25,6 +25,7 @@
 #include "ParticleEmitter.h"
 #include "Player.h"
 #include "GameScene.h"
+#include "Game.h"
 #include "ImGuiManager.h"
 
 #pragma comment(lib, "Dbghelp.lib")
@@ -229,6 +230,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ファイルを作って書き込み準備
 	ofstream logStream(logFilePath);
 
+	Game game;
+	game.Initialize();
 	// ポインタ
 	WinApp* winApp = nullptr;
 	// WindowsAPIの初期化
@@ -364,6 +367,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector3 rotation = { 0.0f, 0.0f, 0.0f };
 
+	
 	// ウィンドウの×ボタンが押されるまでループ
 	while (true) {
 		// Windowsのメッセージ処理
@@ -457,14 +461,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		srvManager->PreDraw();
 
-		// 3Dオブジェクトの描画準備。3Dオブジェクトの描画に共通のグラフィックスコマンドを積む
-		object3dCommon->DrawSetting();
+		game.Update();
 
-		for (uint32_t i = 0; i < 2; i++) {
-			// 3Dオブジェクトの描画
-			//object3d[i]->Draw();
+		if(game.IsEndRequst()) {
+			break;
 		}
 
+		game.Draw();
 		player->Draw();
 
 		//particleManager->Draw();
@@ -481,12 +484,61 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 描画後処理
 		dxBase->PostDraw();
 
-		Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
-		uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
-		uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
-		/*materialData->uvTransform = uvTransformMatrix;*/
 	}
 
+	game.Finalize();
+
+//	CloseHandle(dxBase->GetFenceEvent());
+//
+//	// WindowsAPIの終了処理
+//	winApp->Finalize();
+//
+//	// WindowsAPI解放
+//	delete winApp;
+//	winApp = nullptr;
+//
+//	// キー入力処理解放
+//	delete input;
+//
+//	//// スプライト共通部の解放
+//	delete spriteCommon;
+//
+//	// フィールドの解放
+////	delete field;
+//
+//	// playerの解放
+//	delete player;
+//
+//	// カメラの解放
+//	delete camera;
+//
+//	delete gameScene;
+//
+//	// パーティクルエミッターの解放
+//	delete particleEmitter;
+//
+//	// パーティクルマネージャの終了
+//	particleManager->Finalize();
+//
+//	// 3dオブジェクト共通部の解放
+//	delete object3dCommon;
+//
+//	// テクスチャマネージャの終了
+//	textureManager->Finalize();
+//
+//	// 3Dモデルマネージャの終了
+//	modelManager->Finalize();
+//
+//	// SRVマネージャの解放
+//	delete srvManager;
+//
+//	// DirectX解放
+//	delete dxBase;
+//
+//	// XAudio2解放
+//	xAudio2.Reset();
+//	// 音声データ解放
+//	SoundUnload(&soundData1);
 	CloseHandle(dxBase->GetFenceEvent());
 
 	// キー入力処理解放
