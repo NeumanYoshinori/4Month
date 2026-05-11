@@ -14,12 +14,12 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// 1. 胴体（Body）の準備
 	// ==========================================
 	
-	ModelManager::GetInstance()->LoadModel("alphaBoss.obj");
+	ModelManager::GetInstance()->LoadModel("boss.obj");
 
 	objectBody_ = new Object3d();
 	objectBody_->Initialize(object3dCommon);
 
-	objectBody_->SetModel("alphaBoss.obj");
+	objectBody_->SetModel("boss.obj");
 
 
 	// ==========================================, ,
