@@ -35,6 +35,8 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	int centerY = 720 / 2;
 	// ゲーム開始前に、カーソルを強制的に画面の中央にセットしておく
 	SetCursorPos(centerX, centerY);
+
+
 }
 
 void Player::Update(Input* input) {
@@ -211,6 +213,7 @@ void Player::Update(Input* input) {
 		isDead_ = true;
 		// 必要に応じてここで「死亡アニメーション」などを再生
 		OutputDebugStringA("PLAYER DEAD\n");
+		return;
 	}
 
 	if (isDead_) return;
@@ -354,26 +357,19 @@ void Player::Draw() {
 	//// 平行光源CBufferの場所を設定
 	//commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
-	if (isInvincible_) {
-		// 4フレームに1回だけ消える演出
-		if (invincibleTimer_ % 8 < 4) {
+// 無敵タイマー(invincibilityTimer_)が 0 より大きい時、点滅させる
+	// 4フレームに1回非表示にする（チカチカさせる）
+	if (invincibilityTimer_ > 0) {
+		if (invincibilityTimer_ % 8 < 4) {
+			// ここでreturnすることで、このフレームはモデルを描画しない＝消えて見える
 			return;
 		}
 	}
-
 	// 3Dモデルが割り当てられていれば描画する
 	if (object3d_) {
 		object3d_->Draw();
 	}
-	// ★ 修正：死んでいない時だけ自機を描画する！
-	if (!isDead_) {
-		// 無敵時間中はチカチカ点滅させる（4フレームごとに表示/非表示を切り替え）
-		if (invincibilityTimer_ == 0 || invincibilityTimer_ % 4 >= 2) {
-			if (object3d_) {
-				object3d_->Draw();
-			}
-		}
-	}
+	
 
 	// 弾は、自機が死んでいても画面に残って飛んでいくように別で描画
 	for (Bullet* b : bullets_) {

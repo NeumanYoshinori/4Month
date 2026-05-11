@@ -34,6 +34,8 @@ private:
 
     Camera* camera_ = nullptr;
 
+    SceneManager* sceneManager_ = nullptr;
+
     int cameraReturnTimer_ = 0;       // 戻るためのタイマー
     const int kReturnDuration = 60;   // 60フレーム（1秒）かけて戻る
     Vector3 returnStartPos_;          // 戻り始めた瞬間の座標

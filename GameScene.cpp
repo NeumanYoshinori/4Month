@@ -38,9 +38,34 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     skydome_ = new Skydome();
     skydome_->Initialize(object3dCommon_, camera_);
 
+    sceneManager_ = SceneManager::GetInstance();
+
 }
 
 void GameScene::Update(Player* player) {
+
+    if (boss_->isAppearing_ && player->IsDead()) {
+        player->SetHP(10);
+        player->SetIsDead(false);
+        player->SetInvincibilityTimer(0);
+        OutputDebugStringA("Player Reset for New Game!\n");
+
+        boss_->hp_ = 30;           // HPを満タンに
+        boss_->isDead_ = false;    // 死亡フラグを解除
+     
+
+    }
+
+    if (player->IsDead()) {
+        // 🌟 ここでシーンマネージャーに「ゲームオーバーへ行け！」と命令する
+        sceneManager_->ChangeScene("GAMEOVER");
+        return;
+    }
+
+    if (boss_->IsDead()) {
+        sceneManager_->ChangeScene("GAMECLEAR");
+        return;
+    }
 
     if (Input::GetInstance()->TriggerKey(DIK_RETURN)) {
 
@@ -131,7 +156,7 @@ void GameScene::Update(Player* player) {
                 float dx = pCenter.x - armPos.x; float dy = pCenter.y - armPos.y; float dz = pCenter.z - armPos.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                if (distance < 2.0f) {
+                if (distance < 1.5f) {
                     OutputDebugStringA("Hit Left Punch!!!\n");
                     player->OnDamage();
                 }
@@ -147,7 +172,7 @@ void GameScene::Update(Player* player) {
                 float dx = pCenter.x - armPos.x; float dy = pCenter.y - armPos.y; float dz = pCenter.z - armPos.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                if (distance < 2.0f) {
+                if (distance < 1.5f) {
                     OutputDebugStringA("Hit Right Punch!!!\n");
                     player->OnDamage();
                 }

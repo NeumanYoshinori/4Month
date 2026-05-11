@@ -107,6 +107,10 @@ public: // メンバ関数
 	// 現在の速度を受け取るための関数
 	void SetSpeed(float speed) { currentSpeed_ = speed; }
 
+	void SetHP(int hp) { hp_ = hp; }
+	void SetIsDead(bool isDead) { isDead_ = isDead; }
+	void SetInvincibilityTimer(int timer) { invincibilityTimer_ = timer; }
+
 private:
 	// 座標変換行列データ作成
 	void CreateTransformationMatrixData();
