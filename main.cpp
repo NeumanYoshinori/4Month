@@ -284,6 +284,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
 	ModelManager::GetInstance()->LoadModel("field.obj");
+	ModelManager::GetInstance()->LoadModel("cube.obj");
 
 	// 3dオブジェクトの初期化
 	//Object3d* field = new Object3d();
@@ -352,7 +353,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 音声読み込み
 	SoundData soundData1 = SoundLoadWave("resources/Alarm01.wav");
 	// 音声再生
-	SoundPlayWave(xAudio2.Get(), soundData1);
+	//SoundPlayWave(xAudio2.Get(), soundData1);
 
 	// ブレンドモード
 	static int currentBlend = kBlendModeNone;
@@ -380,6 +381,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			OutputDebugStringA("Hit 0\n");
 		}
 
+		if (input->TriggerKey(DIK_ESCAPE)) { // または PushKey(DIK_ESCAPE)
+			break; // ループを抜けて終了処理へ向かう
+		}
 		// カメラの更新
 		camera->Update();
 

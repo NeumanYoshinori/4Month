@@ -79,6 +79,17 @@ public: // メンバ関数
 	const std::list<Bullet*>& GetBullets() const { return bullets_; }
 	void FireBullet(bool isCharged); // 弾を発射する関数
 
+	void OnDamage(int damage = 1) {
+		if (isInvincible_) return; // 無敵時間中なら無視
+
+		hp_ -= damage;
+		if (hp_ < 0) hp_ = 0;
+
+		// ダメージを受けた後の無敵タイマーなどをセットするとよりゲームらしくなります
+		isInvincible_ = true;
+		invincibleTimer_ = 60; // 1秒間無敵など
+	}
+
 
 	// ==========================================
 	// 自機のHP・ダメージ・死亡処理
@@ -147,6 +158,35 @@ private:
 	int chargeTimer_ = 0;       // 左クリックを長押ししている時間
 	bool isCharging_ = false;   // チャージ中かどうか
 
+	int hp_ = 10;
+	bool isInvincible_ = false;
+	int invincibleTimer_ = 0;
+	bool isDead_ = false; // プレイヤー自身の死亡フラグ
+
+	struct ChargeParticle {
+		Object3d* object3d = nullptr;
+		Vector3 startPos;     // 発生した位置
+		Vector3 position;     // 現在の位置
+		float progress;       // 中心に向かう進行度 (0.0f ~ 1.0f)
+		float speed;          // 吸い込まれるスピード
+	};
+
+	std::list<ChargeParticle*> chargeParticles_;
+
+	// パーティクルの生成と更新用関数
+	void SpawnChargeParticle(const Vector3& center);
+	void UpdateChargeParticles();
+
+	bool isChargeCompleted_ = false;
+
+	bool isSliding_ = false;             // スライド中かどうか
+	int slideTimer_ = 0;                 // スライドの残りフレーム数
+	const int SLIDE_DURATION = 15;       // スライドを持続するフレーム数
+	Vector3 slideDirection_ = {0, 0, 0}; // スライドする方向
+	float slideSpeed_ = 0.4f;            // スライド中の移動速度
+	
+	int slideCooldownTimer_ = 0;         // 連続スライドを防ぐクールダウン
+	const int SLIDE_COOLDOWN = 30;       // 再度スライドできるまでのフレーム数
 	// 現在の移動速度を保存する変数（初期値は通常速度の 0.1f）
 	float currentSpeed_ = 0.1f;
 
