@@ -7,6 +7,8 @@ class BaseScene;
 class WinApp;
 class GraphicsDevice;
 
+class SpriteCommon;
+
 class SceneManager
 {
 private:
@@ -17,7 +19,7 @@ private:
 	SceneManager& operator=(const SceneManager&) = delete;
 
 public:
-	void Initialize(Object3dCommon* object3dCommon, Camera* camera);
+	void Initialize(Object3dCommon* object3dCommon, Camera* camera, SpriteCommon* spriteCommon);
 	void ChangeScene(const std::string& sceneName);
 	void Update(Player* player);
 	void Draw();
@@ -32,6 +34,7 @@ private:
 
 	Object3dCommon* object3dCommon_ = nullptr;
 	Camera* camera_ = nullptr;
+	SpriteCommon* spriteCommon_ = nullptr;
 
 	AbstractSceneFactory* sceneFactory_ = nullptr;
 };

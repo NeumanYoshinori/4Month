@@ -67,9 +67,14 @@ void GameScene::Update(Player* player) {
         return;
     }
 
-    if (Input::GetInstance()->TriggerKey(DIK_RETURN)) {
+    if (Input::GetInstance()->TriggerKey(DIK_1)) {
 
         SceneManager::GetInstance()->ChangeScene("GAMEOVER");
+    }
+
+    if (Input::GetInstance()->TriggerKey(DIK_2)) {
+
+        SceneManager::GetInstance()->ChangeScene("GAMECLEAR");
     }
 
     skydome_->Update(camera_);

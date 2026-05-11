@@ -75,7 +75,7 @@ void Game::Initialize()
 	//field->SetCamera(camera_);
 
 	sceneManager_ = SceneManager::GetInstance();
-	sceneManager_->Initialize(object3dCommon_, camera_);
+	sceneManager_->Initialize(object3dCommon_, camera_, spriteCommon_);
 
 	SceneFactory* sceneFactory = new SceneFactory();
 	sceneManager_->SetSceneFactory(sceneFactory);
