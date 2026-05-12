@@ -12,7 +12,7 @@ class SpriteCommon;
 class SceneManager
 {
 private:
-	// シングルトン化のためのプライベート化
+
 	SceneManager() = default;
 	~SceneManager() = default;
 	SceneManager(const SceneManager&) = delete;

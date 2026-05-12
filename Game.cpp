@@ -90,7 +90,7 @@ void Game::Initialize()
 	player_->SetCamera(camera_);
 
 	// ==========================================
-	// ★ 追加：GameScene（ボスと背景の管理者）を作る
+	// GameScene（ボスと背景の管理者）を作る
 	// ==========================================
 	/*gameScene_ = new GameScene();
 	gameScene_->Initialize(object3dCommon_, camera_);*/

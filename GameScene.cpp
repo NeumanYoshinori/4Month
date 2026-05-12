@@ -57,7 +57,7 @@ void GameScene::Update(Player* player) {
     }
 
     if (player->IsDead()) {
-        // 🌟 ここでシーンマネージャーに「ゲームオーバーへ行け！」と命令する
+        
         sceneManager_->ChangeScene("GAMEOVER");
         return;
     }

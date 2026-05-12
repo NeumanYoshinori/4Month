@@ -29,20 +29,19 @@ void SceneManager::Update(Player* player)
         scene_ = nextScene_;
         nextScene_ = nullptr;
 
-        // 🌟 ここで TitleScene かどうか判定して、SpriteCommon を渡す
-        // #include "TitleScene.h" をファイルの先頭に追加してください
+        // ここで TitleScene かどうか判定して、SpriteCommon を渡す
         TitleScene* titleScene = dynamic_cast<TitleScene*>(scene_);
         if (titleScene) {
             titleScene->SetSpriteCommon(spriteCommon_);
         }
 
-        // 🌟 ゲームクリアシーンへの受け渡しを追加
+        // ゲームクリアシーンへの受け渡しを追加
         GameClearScene* clearScene = dynamic_cast<GameClearScene*>(scene_);
         if (clearScene) {
             clearScene->SetSpriteCommon(spriteCommon_);
         }
 
-        // 🌟 ゲームオーバーシーンへの受け渡しを追加
+        // ゲームオーバーシーンへの受け渡しを追加
         GameOverScene* overScene = dynamic_cast<GameOverScene*>(scene_);
         if (overScene) {
             overScene->SetSpriteCommon(spriteCommon_);

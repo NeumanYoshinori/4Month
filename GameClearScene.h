@@ -19,13 +19,13 @@ public:
 
     ~GameClearScene();
 
-    // 🌟 追加
+   
     void SetSpriteCommon(SpriteCommon* spriteCommon) { spriteCommon_ = spriteCommon; }
 
 private:
     ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
-    // 🌟 追加
+   
     SpriteCommon* spriteCommon_ = nullptr;
     Sprite* clearSprite_ = nullptr;
 };

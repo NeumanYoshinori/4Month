@@ -7,7 +7,7 @@
 class Player;
 class Object3dCommon;
 class Camera;
-class SpriteCommon; // 🌟 追加
+class SpriteCommon; 
 
 class TitleScene : public BaseScene {
 public:
@@ -17,11 +17,11 @@ public:
     void Finalize() override;
     ~TitleScene();
 
-    // 🌟 外から SpriteCommon をもらうための窓口を追加
+  
     void SetSpriteCommon(SpriteCommon* spriteCommon) { spriteCommon_ = spriteCommon; }
 
 private:
     Object3dCommon* object3dCommon_ = nullptr;
-    SpriteCommon* spriteCommon_ = nullptr; // 🌟 ここに保存する
+    SpriteCommon* spriteCommon_ = nullptr; 
     Sprite* titleSprite_ = nullptr;
 };

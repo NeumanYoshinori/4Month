@@ -10,7 +10,7 @@ void TitleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // メンバ変数に保存
     object3dCommon_ = object3dCommon;
 
-    // 🌟重要：SpriteCommonがセットされているか確認
+    // SpriteCommonがセットされているか確認
     assert(spriteCommon_ != nullptr && "TitleSceneにSpriteCommonがセットされていません");
 
     // タイトル画像の読み込み（パスは自分の環境に合わせてください）
@@ -32,7 +32,7 @@ void TitleScene::Update(Player* player) {
         titleSprite_->Update();
     }
 
-    // 🌟Enterキーが押されたらゲームシーンへ切り替え
+    // Enterキーが押されたらゲームシーンへ切り替え
     if (Input::GetInstance()->TriggerKey(DIK_RETURN)) {
         SceneManager::GetInstance()->ChangeScene("GAMEPLAY");
     }

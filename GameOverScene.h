@@ -1,7 +1,7 @@
 #pragma once
 #include "Boss.h" 
 #include "BaseScene.h"
-#include "SpriteCommon.h" // 追加
+#include "SpriteCommon.h"
 #include "Sprite.h"
 
 class Player;
@@ -19,13 +19,13 @@ public:
 
     ~GameOverScene();
 
-    // 🌟 追加
+   
     void SetSpriteCommon(SpriteCommon* spriteCommon) { spriteCommon_ = spriteCommon; }
 
 private:
     ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
-    // 🌟 追加
+    
     SpriteCommon* spriteCommon_ = nullptr;
     Sprite* gameOverSprite_ = nullptr;
 };
