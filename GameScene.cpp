@@ -124,15 +124,30 @@ void GameScene::Update(Player* player) {
 
                 if (boss_->GetPhase() == 1) {
                     // ==========================================
-                    // 第1形態：直線の箱型判定
+                    // 第1形態：斜めに飛ぶ波の正確な判定（内積を使用）
                     // ==========================================
-                    float diffZ = std::abs(pPos.z - wavePos.z);
-                    bool isHitZ = (diffZ < waveScale.z);
-                    bool isHitY = (pPos.y < waveScale.y);
+                    Vector3 waveVel = boss_->GetShockwaveVelocity();
 
-                    if (isHitZ && isHitY) {
-                        OutputDebugStringA("Hit Shockwave (Phase 1)!!!\n");
-                        player->OnDamage();
+                    // 波の進行方向ベクトルを長さを1にして取り出す
+                    float speed = std::sqrt(waveVel.x * waveVel.x + waveVel.z * waveVel.z);
+                    if (speed > 0.0f) {
+                        Vector3 dir = { waveVel.x / speed, 0.0f, waveVel.z / speed };
+
+                        // 波の中心から自機へのベクトル
+                        float vX = pPos.x - wavePos.x;
+                        float vZ = pPos.z - wavePos.z;
+
+                        // 🌟 ここがポイント：内積（Dot）で「波の厚み方向」の距離だけを抽出する
+                        float diffDist = std::abs(vX * dir.x + vZ * dir.z);
+
+                        // 波の厚み(waveScale.z)より近くて、高さ(waveScale.y)より低ければヒット
+                        bool isHitDist = (diffDist < waveScale.z);
+                        bool isHitY = (pPos.y < waveScale.y);
+
+                        if (isHitDist && isHitY) {
+                            OutputDebugStringA("Hit Shockwave (Phase 1)!!!\n");
+                            player->OnDamage();
+                        }
                     }
                 } else if (boss_->GetPhase() == 2) {
                     // ==========================================
