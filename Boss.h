@@ -147,6 +147,8 @@ public:
     int GetTransitionTimer() const { return transitionTimer_; }
 
 
+    Vector3 GetShockwaveVelocity() const { return shockwaveVelocity_; }
+
 private:
     // Model* modelBody_ などは全部消してOKです！
 
@@ -209,6 +211,9 @@ private:
     Vector3 shockwavePos_ = { 0.0f, 0.0f, 0.0f };   // 衝撃波の位置
 
 
+    Vector3 shockwaveVelocity_ = { 0.0f, 0.0f, 0.0f };
+    Vector3 shockwaveRotate_ = { 0.0f, 0.0f, 0.0f };
+   
 
     // ==========================================
     // フェーズ（形態）管理用パラメータ
