@@ -22,6 +22,9 @@ public:
 
 
 private:
+
+    Player* player_ = nullptr;
+
 	// ボスのインスタンス
 	Boss* boss_ = nullptr;
 
