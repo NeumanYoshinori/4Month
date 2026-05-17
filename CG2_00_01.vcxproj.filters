@@ -69,6 +69,7 @@
     <ClInclude Include="engine\base\SrvManager.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Skydome.h" />
+    <ClInclude Include="Player.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\Object3d.hlsli" />

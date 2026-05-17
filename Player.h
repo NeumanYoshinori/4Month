@@ -190,4 +190,11 @@ private:
 	// 現在の移動速度を保存する変数（初期値は通常速度の 0.1f）
 	float currentSpeed_ = 0.1f;
 
+	float playerRadius = 0.25f;
+	float wallRadius = 36.8f;
+	Vector3 wallPos = { 5.0f, 0.0f, 0.0f };
+
+	bool hitWall_ = false;
+
+	Vector3 direction_ = { 0.0f, 0.0f, 0.0f };
 };

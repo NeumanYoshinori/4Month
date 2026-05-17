@@ -134,9 +134,29 @@ void Player::Update(Input* input) {
 
 		// --- 実際の移動処理 ---
 		if (isSliding_) {
-			// スライド中の高速移動（通常の入力は無視される）
-			transform.translate.x += slideDirection_.x * slideSpeed_;
-			transform.translate.z += slideDirection_.z * slideSpeed_;
+			//// スライド中の高速移動（通常の入力は無視される）
+			if (!hitWall_) {
+				transform.translate.x += slideDirection_.x * slideSpeed_;
+				transform.translate.z += slideDirection_.z * slideSpeed_;
+			}
+			//else {
+			//	if (slideDirection_.x > 0.0f && slideDirection_.z > 0.0f) {
+			//		transform.translate.x -= forward.x * slideSpeed_;
+			//		transform.translate.z -= forward.z * slideSpeed_;
+			//	}
+			//	else {
+			//		transform.translate.x += forward.x * slideSpeed_;
+			//		transform.translate.z += forward.z * slideSpeed_;
+			//	}
+			//	if (slideDirection_.x > 0.0f && slideDirection_.z > 0.0f) {
+			//		transform.translate.x -= forward.x * slideSpeed_;
+			//		transform.translate.z -= forward.z * slideSpeed_;
+			//	}
+			//	else {
+			//		transform.translate.x += forward.x * slideSpeed_;
+			//		transform.translate.z += forward.z * slideSpeed_;
+			//	}
+			//}
 
 			slideTimer_--;
 			if (slideTimer_ <= 0) {
@@ -195,6 +215,40 @@ void Player::Update(Input* input) {
 		else {
 			// 地面より上にいるなら空中
 			isGrounded = false;
+		}
+
+		float distance = Length(Vector3(transform.translate.x - wallPos.x, transform.translate.y - wallPos.y, transform.translate.z - wallPos.z));
+		if (distance > wallRadius - playerRadius) {
+			hitWall_ = true;
+		}
+
+		if (hitWall_) {
+			if (input->PushKey(DIK_W)) {
+				if (!isSliding_) {
+					transform.translate.x -= forward.x * speed;
+					transform.translate.z -= forward.z * speed;
+				}
+			}
+			else if (input->PushKey(DIK_S)) {
+				if (!isSliding_) {
+					transform.translate.x += forward.x * speed;
+					transform.translate.z += forward.z * speed;
+				}
+			}
+			if (input->PushKey(DIK_A)) {
+				if (!isSliding_) {
+					transform.translate.x += right.x * speed;
+					transform.translate.z += right.z * speed;
+				}
+			}
+			else if (input->PushKey(DIK_D)) {
+				if (!isSliding_) {
+					transform.translate.x -= right.x * speed;
+					transform.translate.z -= right.z * speed;
+				}
+			}
+
+			hitWall_ = false;
 		}
 	}
 

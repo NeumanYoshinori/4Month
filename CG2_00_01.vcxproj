@@ -222,6 +222,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\3d\ParticleManager.h" />
     <ClInclude Include="engine\base\SrvManager.h" />
     <ClInclude Include="GameScene.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Skydome.h" />
   </ItemGroup>
   <ItemGroup>
