@@ -25,21 +25,21 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// ==========================================, ,
 	// 2. 左腕（Left Arm）の準備
 	// ==========================================
-	ModelManager::GetInstance()->LoadModel("alphaBossLeftArm.obj");
+	ModelManager::GetInstance()->LoadModel("LeftArm.obj");
 
 	objectLeftArm_ = new Object3d();
 	objectLeftArm_->Initialize(object3dCommon);
-	objectLeftArm_->SetModel("alphaBossLeftArm.obj");
+	objectLeftArm_->SetModel("LeftArm.obj");
 
 
 	// ==========================================
 	// 3. 右腕（Right Arm）の準備
 	// ==========================================
-	ModelManager::GetInstance()->LoadModel("alphaBossRightArm.obj");
+	ModelManager::GetInstance()->LoadModel("RightArm.obj");
 
 	objectRightArm_ = new Object3d();
 	objectRightArm_->Initialize(object3dCommon);
-	objectRightArm_->SetModel("alphaBossRightArm.obj");
+	objectRightArm_->SetModel("RightArm.obj");
 
 
 	// ==========================================
