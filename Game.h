@@ -38,8 +38,8 @@ private:
 	ModelManager* modelManager_ = nullptr;
 	Object3dCommon* object3dCommon_ = nullptr;
 	Camera* camera_ = nullptr;
-	Player* player_ = nullptr;
-	GameScene* gameScene_ = nullptr;
+	//Player* player_ = nullptr;
+	//GameScene* gameScene_ = nullptr;
 	ParticleManager* particleManager_ = nullptr;
 	ParticleEmitter* particleEmitter_ = nullptr;
 
