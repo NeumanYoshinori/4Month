@@ -41,12 +41,26 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
     // チームメイトが設定していた角度と位置をそのままセット
     field_->SetRotate({ 3.14f, 0.0f, 0.0f });
-    field_->SetTranslate({ 0.0f, 0.0f, 5.0f });
+    field_->SetTranslate({ 5.0f, 0.0f, 0.0f });
 
     // カメラの紐付けも忘れずに！
     field_->SetCamera(camera);
     // ==========================================
 
+    // ==========================================
+    // 壁の初期化
+    // ==========================================
+    ModelManager::GetInstance()->LoadModel("wall.obj");
+
+    wall_ = new Object3d();
+    wall_->Initialize(object3dCommon_);
+    wall_->SetModel("wall.obj");
+
+    wall_->SetRotate({ 0.0f, 0.0f, 0.0f });
+    wall_->SetTranslate({ 5.0f, 0.0f, .0f });
+
+    wall_->SetCamera(camera);
+    // ==========================================
 
     boss_ = new Boss();
     if (boss_) {
@@ -121,6 +135,10 @@ void GameScene::Update(Player* dummy) {
 
     if (field_) {
         field_->Update();
+    }
+
+    if (wall_) {
+        wall_->Update();
     }
 
     if (player_) {
@@ -478,6 +496,10 @@ void GameScene::Draw() {
         field_->Draw();
     }
 
+    if (wall_) {
+        wall_->Draw();
+    }
+
     if (player_) {
         player_->Draw();
     }
@@ -505,4 +527,7 @@ GameScene::~GameScene() {
 
     delete skydome_;
     skydome_ = nullptr;
+
+    delete wall_;
+    wall_ = nullptr;
 }

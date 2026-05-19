@@ -198,6 +198,40 @@ void Player::Update(Input* input) {
 			// 地面より上にいるなら空中
 			isGrounded = false;
 		}
+
+		float distance = Length(Vector3(transform.translate.x - wallPos.x, transform.translate.y - wallPos.y, transform.translate.z - wallPos.z));
+		if (distance > wallRadius - playerRadius) {
+			hitWall_ = true;
+		}
+		
+		if (hitWall_) {
+			if (isSliding_) {
+				isSliding_ = false;
+				transform.translate.x -= slideDirection_.x * slideSpeed_;
+				transform.translate.z -= slideDirection_.z * slideSpeed_;
+				slideCooldownTimer_ = SLIDE_COOLDOWN;
+			}
+			else {
+				if (input->PushKey(DIK_W)) {
+					transform.translate.x -= forward.x * speed;
+					transform.translate.z -= forward.z * speed;
+				}
+				else if (input->PushKey(DIK_S)) {
+					transform.translate.x += forward.x * speed;
+					transform.translate.z += forward.z * speed;
+				}
+				if (input->PushKey(DIK_A)) {
+					transform.translate.x += right.x * speed;
+					transform.translate.z += right.z * speed;
+				}
+				else if (input->PushKey(DIK_D)) {
+					transform.translate.x -= right.x * speed;
+					transform.translate.z -= right.z * speed;
+				}
+			}
+
+			hitWall_ = false;
+		}
 	}
 
 	// 1. 無敵時間のカウントダウン

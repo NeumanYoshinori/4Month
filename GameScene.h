@@ -30,6 +30,8 @@ private:
 
 	Object3d* field_ = nullptr;
 
+    Object3d* wall_ = nullptr;
+
     Skydome* skydome_ = nullptr;
    
     ModelCommon* modelCommon_ = nullptr;
