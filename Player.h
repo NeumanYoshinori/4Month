@@ -195,6 +195,4 @@ private:
 	Vector3 wallPos = { 5.0f, 0.0f, 0.0f };
 
 	bool hitWall_ = false;
-
-	Vector3 direction_ = { 0.0f, 0.0f, 0.0f };
 };
