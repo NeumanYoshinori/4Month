@@ -326,20 +326,78 @@ void Player::Update(Input* input) {
 	UpdateChargeParticles();
 
 	// ==========================================
-	// 3. カメラの配置（プレイヤーを中央に捉える）
-	// ==========================================
+		// 3. カメラの配置（プレイヤーを中央に捉える＆壁めり込み防止）
+		// ==========================================
 	if (camera_ && !isCinematic_) {
-		float cameraDistance = 15.0f;
+		float defaultDistance = 15.0f; // 本来離れたい理想の距離
+		float cameraDistance = defaultDistance;
 
 		// 注視点をプレイヤーの中央（頭の高さなど）に設定する
 		Vector3 targetPos = transform.translate;
 		targetPos.y += 1.5f;
 
-		// 球座標系の計算を使って、プレイヤーの後ろにカメラを配置する
+		// ① まず、制限の壁（円柱）の情報を定義（下部の変数と同期）
+		Vector3 wPos = wallPos; // { 5.0f, 0.0f, 0.0f }
+		float wRadius = wallRadius; // 36.8f
+		float cameraSafetyMargin = 1.0f; // 壁の厚み分のマージン（これより壁に近づけない）
+		float maxAllowedRadius = wRadius - cameraSafetyMargin;
+
+		// ② 球座標系から「カメラの向かう方向ベクトル（自機からカメラへの向き）」を割り出す
+		Vector3 camDir;
+		camDir.x = -std::sin(transform.rotate.y) * std::cos(cameraAngleX);
+		camDir.y = std::sin(cameraAngleX);
+		camDir.z = -std::cos(transform.rotate.y) * std::cos(cameraAngleX);
+
+		// ③ 【めり込み防止の核心】カメラが壁を突き抜けるか事前にチェック
+		// 本来配置される予定のカメラのXZ平面上での位置を予測計算
+		Vector3 plannedCamPosXZ;
+		plannedCamPosXZ.x = targetPos.x + camDir.x * defaultDistance;
+		plannedCamPosXZ.z = targetPos.z + camDir.z * defaultDistance;
+
+		// 壁の中心から、予定しているカメラ位置までのXZ平面での距離を計算
+		float distToPlannedCam = std::sqrt(
+			(plannedCamPosXZ.x - wPos.x) * (plannedCamPosXZ.x - wPos.x) +
+			(plannedCamPosXZ.z - wPos.z) * (plannedCamPosXZ.z - wPos.z)
+		);
+
+		// もし予定位置が壁の最大許容半径を超えていたら（壁の外に出てしまうなら）
+		if (distToPlannedCam > maxAllowedRadius) {
+			// プレイヤーから壁の境界線までの距離を逆算し、カメラの距離を動的に縮める
+			// 二次方程式を解くか、簡易的な比率計算で距離を制限します
+			float dx = targetPos.x - wPos.x;
+			float dz = targetPos.z - wPos.z;
+
+			// 簡易的なベクトル投影による距離制限
+			// 自機からカメラへのXZ方向の単位ベクトル
+			float lenXZ = std::sqrt(camDir.x * camDir.x + camDir.z * camDir.z);
+			if (lenXZ > 0.0f) {
+				float dirX = camDir.x / lenXZ;
+				float dirZ = camDir.z / lenXZ;
+
+				// レイと円柱の交点計算を簡易化
+				// 自機から見た壁までの限界距離を求める
+				float b = dx * dirX + dz * dirZ;
+				float c = (dx * dx + dz * dz) - (maxAllowedRadius * maxAllowedRadius);
+				float discriminant = b * b - c;
+
+				if (discriminant >= 0.0f) {
+					float tWall = -b + std::sqrt(discriminant);
+					// XZ平面での制限距離から、3D空間全体のカメラ距離に変換
+					float limitedDistance = tWall / lenXZ;
+
+					// 距離を安全な範囲に狭める（最低でも2.0fは確保して自機にめり込みすぎないようにする）
+					if (limitedDistance < cameraDistance) {
+						cameraDistance = (std::max)(2.0f, limitedDistance);
+					}
+				}
+			}
+		}
+
+		// ④ 確定した cameraDistance を使って実際のカメラ座標を計算
 		Vector3 cameraPos;
-		cameraPos.x = targetPos.x - std::sin(transform.rotate.y) * std::cos(cameraAngleX) * cameraDistance;
-		cameraPos.y = targetPos.y + std::sin(cameraAngleX) * cameraDistance;
-		cameraPos.z = targetPos.z - std::cos(transform.rotate.y) * std::cos(cameraAngleX) * cameraDistance;
+		cameraPos.x = targetPos.x + camDir.x * cameraDistance;
+		cameraPos.y = targetPos.y + camDir.y * cameraDistance;
+		cameraPos.z = targetPos.z + camDir.z * cameraDistance;
 
 		// 地面を Y=0.0f とした場合、カメラの最低高度を 1.0f に制限する
 		if (cameraPos.y < 1.0f) {
