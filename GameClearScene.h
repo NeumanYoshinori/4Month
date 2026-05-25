@@ -3,6 +3,9 @@
 #include "BaseScene.h"
 #include "SpriteCommon.h" // 追加
 #include "Sprite.h"
+#include "Object3d.h"
+#include "Skydome.h"
+
 
 class Player;
 class ModelCommon;
@@ -19,13 +22,22 @@ public:
 
     ~GameClearScene();
 
-   
-    void SetSpriteCommon(SpriteCommon* spriteCommon) { spriteCommon_ = spriteCommon; }
+    void SetSpriteCommon(class SpriteCommon* spriteCommon) { (void)spriteCommon; }
+   // void SetSpriteCommon(SpriteCommon* spriteCommon) { spriteCommon_ = spriteCommon; }
 
 private:
-    ModelCommon* modelCommon_ = nullptr;
+   /* ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
    
     SpriteCommon* spriteCommon_ = nullptr;
-    Sprite* clearSprite_ = nullptr;
+    Sprite* clearSprite_ = nullptr;*/
+
+    Object3dCommon* object3dCommon_ = nullptr;
+    Camera* camera_ = nullptr;
+
+    // 3Dモデル用
+    Object3d* clearTextObject_ = nullptr;
+    Skydome* skydome_ = nullptr;
+    Object3d* EnterTextObject_ = nullptr;
+
 };

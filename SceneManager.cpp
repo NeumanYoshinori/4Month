@@ -22,10 +22,11 @@ void SceneManager::Initialize(Object3dCommon* object3dCommon, Camera* camera, Sp
 void SceneManager::Update(Player* player)
 {
     if (nextScene_) {
-        if (scene_) {
+        /*if (scene_) {
             scene_->Finalize();
+         
             delete scene_;
-        }
+        }*/
         scene_ = nextScene_;
         nextScene_ = nullptr;
 

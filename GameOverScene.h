@@ -3,6 +3,8 @@
 #include "BaseScene.h"
 #include "SpriteCommon.h"
 #include "Sprite.h"
+#include "Object3d.h"
+#include "Skydome.h"
 
 class Player;
 class ModelCommon;
@@ -19,13 +21,22 @@ public:
 
     ~GameOverScene();
 
-   
-    void SetSpriteCommon(SpriteCommon* spriteCommon) { spriteCommon_ = spriteCommon; }
+    void SetSpriteCommon(class SpriteCommon* spriteCommon) { (void)spriteCommon; }
+    //void SetSpriteCommon(SpriteCommon* spriteCommon) { spriteCommon_ = spriteCommon; }
 
 private:
-    ModelCommon* modelCommon_ = nullptr;
+    /*ModelCommon* modelCommon_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
     
     SpriteCommon* spriteCommon_ = nullptr;
-    Sprite* gameOverSprite_ = nullptr;
+    Sprite* gameOverSprite_ = nullptr;*/
+
+    //3D
+    Object3dCommon* object3dCommon_ = nullptr;
+    Camera* camera_ = nullptr;
+
+    Object3d* gameOverTextObject_ = nullptr;
+    Skydome* skydome_ = nullptr;
+    Object3d* EnterTextObject_ = nullptr;
+
 };
