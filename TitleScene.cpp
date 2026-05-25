@@ -75,7 +75,7 @@ void TitleScene::Update(Player* player) {
 
     // Enterキーが押されたらゲームシーンへ切り替え
     if (Input::GetInstance()->TriggerKey(DIK_RETURN)) {
-        SceneManager::GetInstance()->ChangeScene("GAMEPLAY");
+        SceneManager::GetInstance()->ChangeScene("RULE");
     }
 }
 

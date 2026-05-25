@@ -134,6 +134,7 @@
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="GameClearScene.cpp" />
+    <ClCompile Include="Rule.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractSceneFactory.h" />
@@ -170,6 +171,7 @@
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="GameClearScene.h" />
+    <ClInclude Include="Rule.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\Object3d.hlsli" />
