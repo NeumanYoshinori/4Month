@@ -20,7 +20,6 @@ public:
 
     Boss* GetBoss() const { return boss_; }
 
-
 private:
 
     Player* player_ = nullptr;

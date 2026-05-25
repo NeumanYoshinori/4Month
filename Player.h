@@ -12,11 +12,13 @@
 #include <cmath>
 #include <algorithm>
 #include <list>         
-#include "Object3d.h"   
+#include "Object3d.h"  
+#include "Sprite.h"
 
 
 class Object3dCommon;
 class Input;
+class SpriteCommon;
 
 // 3Dオブジェクト
 class Player {
@@ -191,7 +193,7 @@ private:
 	
 	int slideCooldownTimer_ = 0;         // 連続スライドを防ぐクールダウン
 	const int SLIDE_COOLDOWN = 30;       // 再度スライドできるまでのフレーム数
-	// 現在の移動速度を保存する変数（初期値は通常速度の 0.1f）
 	float currentSpeed_ = 0.1f;
 
+	Sprite* reticleSprite_ = nullptr;
 };

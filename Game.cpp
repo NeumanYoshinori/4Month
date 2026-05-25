@@ -39,7 +39,7 @@ void Game::Initialize()
 	textureManager_->LoadTexture("resources/monsterBall.png");
 
 	// スプライト共通部の初期化
-	spriteCommon_ = new SpriteCommon();
+	spriteCommon_ = SpriteCommon::GetInstance();
 	spriteCommon_->Initialize(dxBase_);
 
 	// モデルマネージャー

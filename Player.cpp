@@ -1,6 +1,8 @@
 #include "Player.h"
 #include "Object3dCommon.h"
 #include "Input.h"
+#include "TextureManager.h"
+#include "SpriteCommon.h"
 
 using namespace std;
 using namespace MathFunction;
@@ -33,9 +35,27 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 
 	int centerX = 1280 / 2;
 	int centerY = 720 / 2;
-	// ゲーム開始前に、カーソルを強制的に画面の中央にセットしておく
+
 	SetCursorPos(centerX, centerY);
 
+	// 画像の読み込み（パスは実際の配置場所に合わせて変更してください）
+	std::string reticlePath = "resources/reticle.png";
+	TextureManager::GetInstance()->LoadTexture(reticlePath);
+
+	reticleSprite_ = new Sprite();
+	reticleSprite_->Initialize(SpriteCommon::GetInstance(), "resources/reticle.png");
+
+	// 画像の本来のサイズを取得
+	Vector2 originalSize = reticleSprite_->GetSize();
+	float scale = 0.05f;
+	reticleSprite_->SetSize({ originalSize.x * scale, originalSize.y * scale });
+
+	// スケール適用後の「半分のサイズ」を計算
+	float reticleHalfWidth = (originalSize.x * scale) / 2.0f;
+	float reticleHalfHeight = (originalSize.y * scale) / 2.0f;
+
+	// 画面中央から半分のサイズを引くことで、画像の中心が画面中央に一致する
+	reticleSprite_->SetPosition({ static_cast<float>(centerX) - reticleHalfWidth, static_cast<float>(centerY) - reticleHalfHeight });
 
 }
 
@@ -62,7 +82,7 @@ void Player::Update(Input* input) {
 		GetCursorPos(&currentMousePos);
 
 		// 画面の中心座標
-	
+
 		int centerX = 1280 / 2;
 		int centerY = 720 / 2;
 
@@ -82,8 +102,8 @@ void Player::Update(Input* input) {
 		cameraAngleX += deltaY * sensitivity;
 
 		// 【上下の制限】（カメラが真上・真下を通り過ぎて裏返らないようにする）
-		float maxPitch = 1.2f;  // 見下ろし限界
-		float minPitch = -1.0f; // 見上げ限界
+		float maxPitch = 1.0f;  // 見下ろし限界
+		float minPitch = -0.4f; // 見上げ限界
 		if (cameraAngleX > maxPitch) { cameraAngleX = maxPitch; }
 		if (cameraAngleX < minPitch) { cameraAngleX = minPitch; }
 	}
@@ -175,10 +195,6 @@ void Player::Update(Input* input) {
 			velocityY = jumpSpeed;
 			isGrounded = false; // 空中判定にする
 		}
-
-		// Y座標に速度（落下・ジャンプ）を足し込む
-		transform.translate.y += velocityY;
-
 
 		// Y座標に速度（落下・ジャンプ）を足し込む
 		transform.translate.y += velocityY;
@@ -292,27 +308,34 @@ void Player::Update(Input* input) {
 	UpdateChargeParticles();
 
 	// ==========================================
-	// 3. カメラの配置（プレイヤーを中央に捉える）
+	// 3. カメラの配置（真後ろのまま視野を広くする）
 	// ==========================================
 	if (camera_ && !isCinematic_) {
-		float cameraDistance = 15.0f;
+		// --- 💡 カメラの距離と高さの調整パラメータ ---
+		float baseDistance = 18.0f; // プレイヤーからカメラまでの基本距離（デフォルト15.0fから拡大）
+		float heightOffset = 2.2f;   // 注視点（カメラが見る中心）の高さ（デフォルト1.5fから少し高めに）
 
-		// 注視点をプレイヤーの中央（頭の高さなど）に設定する
+		// 注視点をプレイヤーの少し上に設定（自機の足元ではなく、胸〜頭あたりを基準にする）
 		Vector3 targetPos = transform.translate;
-		targetPos.y += 1.5f;
+		targetPos.y += heightOffset;
 
-		// 球座標系の計算を使って、プレイヤーの後ろにカメラを配置する
+		// プレイヤーの上下の首振り角度（cameraAngleX）に応じて、距離を少しだけ自動調整する（お好みで）
+		// これを入れると、真下を見下ろしたときにカメラが自機に近づき、地形に埋まりにくくなります
+		float cameraDistance = baseDistance * std::cos(cameraAngleX * 0.2f);
+
+		// 球座標系の計算を使って、プレイヤーの真後ろにカメラを配置
 		Vector3 cameraPos;
 		cameraPos.x = targetPos.x - std::sin(transform.rotate.y) * std::cos(cameraAngleX) * cameraDistance;
 		cameraPos.y = targetPos.y + std::sin(cameraAngleX) * cameraDistance;
 		cameraPos.z = targetPos.z - std::cos(transform.rotate.y) * std::cos(cameraAngleX) * cameraDistance;
 
-		// 地面を Y=0.0f とした場合、カメラの最低高度を 1.0f に制限する
-		if (cameraPos.y < 1.0f) {
-			cameraPos.y = 1.0f;
+		// 【重要】カメラが地面（Y=0.0f）に潜り込まないようにする制限
+		// カメラ自体の高さが低くなりすぎないよう、最低高度を 1.5f に設定
+		if (cameraPos.y < 1.5f) {
+			cameraPos.y = 1.5f;
 		}
 
-		// カメラに位置と角度をセット
+		// カメラに最終的な位置と角度をセット
 		camera_->SetTranslate(cameraPos);
 		camera_->SetRotate({ cameraAngleX, transform.rotate.y, 0.0f });
 	}
@@ -345,6 +368,10 @@ void Player::Update(Input* input) {
 	//transformationMatrixData->WVP = worldViewProjectionMatrix;
 	//transformationMatrixData->World = worldMatrix;
 
+	if (reticleSprite_ && !isDead_&& !isCinematic_) {
+		reticleSprite_->Update();
+	}
+
 	currentSpeed_ = 0.1f;
 }
 
@@ -369,7 +396,7 @@ void Player::Draw() {
 	if (object3d_) {
 		object3d_->Draw();
 	}
-	
+
 
 	// 弾は、自機が死んでいても画面に残って飛んでいくように別で描画
 	for (Bullet* b : bullets_) {
@@ -378,6 +405,10 @@ void Player::Draw() {
 
 	for (ChargeParticle* p : chargeParticles_) {
 		p->object3d->Draw();
+	}
+
+	if (reticleSprite_ && !isDead_ && !isCinematic_) {
+		reticleSprite_->Draw();
 	}
 }
 
@@ -423,7 +454,7 @@ void Player::FireBullet(bool isCharged) {
 	newBullet->object3d->SetModel("bullet.obj");
 	newBullet->object3d->SetCamera(camera_);
 
-	// 発射位置
+	// 発射位置（プレイヤーの胸元付近）
 	newBullet->position = transform.translate;
 	newBullet->position.y += 1.0f;
 
@@ -436,19 +467,20 @@ void Player::FireBullet(bool isCharged) {
 	cameraDir.z = std::cos(yaw) * std::cos(pitch);
 
 	// ==========================================
-	// 画面の奥に向かって撃つ！
+	// 画面の奥（レティクルの指す先）に向かって撃つ！
 	// ==========================================
 	// 1. カメラの現在位置を取得
 	Vector3 cameraPos = camera_->GetTranslate();
 
-	// 2. 画面のど真ん中、ずっと奥（50先）にある「目標点」を計算する
+	// 2. ターゲットの距離を十分に遠くする（例: 300.0f）
+	// これにより、カメラとプレイヤーの位置ズレ（視差）を吸収し、レティクルの位置へ綺麗に弾が飛びます
 	float targetDistance = 50.0f;
 	Vector3 targetPoint;
 	targetPoint.x = cameraPos.x + (cameraDir.x * targetDistance);
 	targetPoint.y = cameraPos.y + (cameraDir.y * targetDistance);
 	targetPoint.z = cameraPos.z + (cameraDir.z * targetDistance);
 
-	// 3. プレイヤーの胸（newBullet->position）から、目標点へ向かうベクトルを作る
+	// 3. プレイヤーの発射位置から、遠くの目標点へ向かうベクトルを作る
 	Vector3 realShootDir;
 	realShootDir.x = targetPoint.x - newBullet->position.x;
 	realShootDir.y = targetPoint.y - newBullet->position.y;
@@ -467,7 +499,7 @@ void Player::FireBullet(bool isCharged) {
 		// チャージショット（巨大！）
 		float speed = 1.0f;
 		newBullet->radius = 3.0f;
-		newBullet->lifeTimer = 120;
+		newBullet->lifeTimer = 40;
 		newBullet->object3d->SetScale({ 1.5f, 1.5f, 1.5f });
 		newBullet->velocity = { realShootDir.x * speed, realShootDir.y * speed, realShootDir.z * speed };
 	}
@@ -482,7 +514,6 @@ void Player::FireBullet(bool isCharged) {
 
 	bullets_.push_back(newBullet);
 }
-
 
 // ==========================================
 // 自機がダメージを受けた時の処理
@@ -601,4 +632,9 @@ Player::~Player() {
 		delete p;
 	}
 	chargeParticles_.clear();
+
+	if (reticleSprite_) {
+		delete reticleSprite_;
+		reticleSprite_ = nullptr;
+	}
 }
