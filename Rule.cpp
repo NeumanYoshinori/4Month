@@ -12,7 +12,7 @@ void RuleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     camera_ = camera;
 
     // モデル読み込み
-    ModelManager::GetInstance()->LoadModel("3DRule.obj"); // クリア用3D文字
+    ModelManager::GetInstance()->LoadModel("3DRule.obj"); //3D文字
     ModelManager::GetInstance()->LoadModel("SkyDome.obj");
     ModelManager::GetInstance()->LoadModel("3DEnter.obj");
 
@@ -33,7 +33,7 @@ void RuleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
     // 配置の設定
     RuleTextObject_->SetTranslate({ 0.0f, -3.0f, 25.0f });
-    RuleTextObject_->SetScale({ 2.0f, 2.0f, 2.0f });
+    RuleTextObject_->SetScale({ 0.5f, 0.5f, 0.5f });
 
     EnterTextObject_->SetTranslate({ 0.0f,-5.0f, 25.0f });
     EnterTextObject_->SetScale({ 1.0f, 1.0f, 1.0f });
@@ -43,18 +43,6 @@ void RuleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     camera_->SetTranslate({ 0.0f, 0.0f, 0.0f });
     camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 
-
-    //// SpriteCommonがセットされているかチェック
-    //assert(spriteCommon_ != nullptr && "GameClearSceneにSpriteCommonがセットされていません");
-
-    //// クリア画像の読み込み（ファイル名は自分の用意したものに合わせてください）
-    //std::string filePath = "resources/clear.png";
-    //TextureManager::GetInstance()->LoadTexture(filePath);
-
-    //// スプライトの生成と初期化
-    //clearSprite_ = new Sprite();
-    //clearSprite_->Initialize(spriteCommon_, filePath);
-    //clearSprite_->SetPosition({ 0.0f, 0.0f });
 }
 
 void RuleScene::Update(Player* player) {
@@ -64,19 +52,22 @@ void RuleScene::Update(Player* player) {
 
 
     if (RuleTextObject_) {
+     
         static float timer = 0.0f;
-        timer += 0.05f; // 跳ねるスピード
+     
+        timer += 0.02f;
 
         // 現状の座標を取得
         Vector3 pos = RuleTextObject_->GetTranslate();
 
-        // Y座標（高さ）を std::abs(std::sin) で地面に弾む挙動にする
-        pos.y = std::abs(std::sin(timer)) * 2.0f - 2.0f;
+                
+        pos.y = std::sin(timer) * 0.3f - 2.0f;
 
         pos.z = 25.0f;
 
         RuleTextObject_->SetTranslate(pos);
 
+        // 角度は正面で固定して読みにくさを解消
         RuleTextObject_->SetRotate({ 0.0f, 0.0f, 0.0f });
 
         RuleTextObject_->Update();
@@ -94,9 +85,7 @@ void RuleScene::Update(Player* player) {
 }
 
 void RuleScene::Draw() {
-    /* if (clearSprite_) {
-         clearSprite_->Draw();
-     }*/
+  
 
     if (skydome_) skydome_->Draw();
     if (RuleTextObject_) RuleTextObject_->Draw();
@@ -105,10 +94,7 @@ void RuleScene::Draw() {
 }
 
 void RuleScene::Finalize() {
-    /*if (clearSprite_) {
-        delete clearSprite_;
-        clearSprite_ = nullptr;
-    }*/
+  
 
     if (RuleTextObject_) {
         delete RuleTextObject_;
