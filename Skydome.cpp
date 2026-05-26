@@ -3,12 +3,15 @@
 
 void Skydome::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // 1. モデルの読み込み（Blenderで作った球体モデル）
-    ModelManager::GetInstance()->LoadModel("skydome.obj");
+  //  ModelManager::GetInstance()->LoadModel("SkyDome.obj");
+    
+    assert(object3dCommon);
+    assert(camera);
 
     // 2. 3Dオブジェクトの生成と初期化
     object_ = new Object3d();
     object_->Initialize(object3dCommon);
-    object_->SetModel("skydome.obj");
+    object_->SetModel("SkyDome.obj");
     object_->SetCamera(camera);
 
     // 3. サイズを巨大にする

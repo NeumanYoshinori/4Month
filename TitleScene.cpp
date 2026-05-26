@@ -13,13 +13,14 @@ void TitleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
 
 
-    skydome_ = new Skydome();
-    skydome_->Initialize(object3dCommon_, camera_);
 
     //モデル読み込み
     ModelManager::GetInstance()->LoadModel("3DTitle.obj");
     ModelManager::GetInstance()->LoadModel("SkyDome.obj");
 
+
+    skydome_ = new Skydome();
+    skydome_->Initialize(object3dCommon_, camera_);
 
     //初期化
     // --- 3Dタイトル文字の初期化 ---

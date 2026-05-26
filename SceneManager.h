@@ -2,6 +2,9 @@
 
 #include "AbstractSceneFactory.h"
 #include <string>
+class Object3dCommon;
+class Camera;
+class Player;
 
 class BaseScene;
 class WinApp;
