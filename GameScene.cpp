@@ -29,10 +29,12 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     field_->SetCamera(camera);
     // ==========================================
 
+    audio_ = Audio::GetInstance();
+    audio_->Initialize();
 
     boss_ = new Boss();
     if (boss_) {
-        boss_->Initialize(object3dCommon_, camera);
+        boss_->Initialize(object3dCommon_, camera, audio_);
     }
 
     skydome_ = new Skydome();
@@ -476,4 +478,8 @@ GameScene::~GameScene() {
 
     delete skydome_;
     skydome_ = nullptr;
+
+    audio_->Finalize();
+    delete audio_;
+    audio_ = nullptr;
 }

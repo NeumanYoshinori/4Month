@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object3d.h"
+#include "Audio.h"
 
 
 class Object3dCommon;
@@ -8,7 +9,7 @@ class Player;
 
 class Boss {
 public:
-    void Initialize(Object3dCommon* object3dCommon, Camera* camera);
+    void Initialize(Object3dCommon* object3dCommon, Camera* camera, Audio* audio);
     void Update(Player* player);
     void Draw();
 
@@ -265,6 +266,11 @@ private:
     Vector3 bossRotate_ = { 0.0f, 1.57f, 0.0f };
     Vector3 bossScale_ = { 0.5f, 0.5f, 0.5f };
 
+    Audio* audio_ = nullptr;
+    Audio::SoundData bossBGM_;
+    Audio::SoundData explosionSound_;
+    Audio::SoundData missileSound_;
+    Audio::SoundData shockWaveSound_;
 
 
 };

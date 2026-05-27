@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <list>         
 #include "Object3d.h"   
+#include "Audio.h"
 
 
 class Object3dCommon;
@@ -35,7 +36,7 @@ public: // メンバ関数
 	};
 
 	// 初期化
-	void Initialize(Object3dCommon* object3dCommon);
+	void Initialize(Object3dCommon* object3dCommon, Audio* audio);
 
 	~Player();
 
@@ -193,5 +194,9 @@ private:
 	const int SLIDE_COOLDOWN = 30;       // 再度スライドできるまでのフレーム数
 	// 現在の移動速度を保存する変数（初期値は通常速度の 0.1f）
 	float currentSpeed_ = 0.1f;
+
+	Audio* audio_ = nullptr;
+	Audio::SoundData shootSound_;
+	Audio::SoundData bigShootSound_;
 
 };

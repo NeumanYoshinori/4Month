@@ -81,9 +81,12 @@ void Game::Initialize()
 	sceneManager_->SetSceneFactory(sceneFactory);
 	sceneManager_->ChangeScene("TITLE");
 
+	audio_ = Audio::GetInstance();
+	audio_->Initialize();
+
 	// player
 	player_ = new Player();
-	player_->Initialize(object3dCommon_);
+	player_->Initialize(object3dCommon_, audio_);
 	// playerにモデルを紐づける
 	player_->SetModel("player.obj");
 	// playerにカメラを紐づける
@@ -286,4 +289,8 @@ void Game::Finalize()
 	delete object3dCommon_;
 	delete camera_;
 	delete player_;
+
+	audio_->Finalize();
+	delete audio_;
+	audio_ = nullptr;
 }

@@ -15,6 +15,7 @@
 #include "SceneManager.h"
 #include "TitleScene.h"
 #include "SceneFactory.h"
+#include "Audio.h"
 
 class Game
 {
@@ -46,5 +47,7 @@ private:
 	bool endRequst_ = false;
 
 	SceneManager* sceneManager_ = nullptr;
+	Audio* audio_ = nullptr;
+	Audio::SoundData bgm;
 };
 

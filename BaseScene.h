@@ -5,6 +5,7 @@ class SceneManager;
 class Object3dCommon;
 class Camera;
 class Player;
+class Audio;
 
 class BaseScene
 {

@@ -8,7 +8,7 @@
 #include <cmath>   
 
 
-void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
+void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera, Audio* audio) {
 
 	// ==========================================
 	// 1. 胴体（Body）の準備
@@ -125,6 +125,11 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 		spheres_[i]->SetCamera(camera);
 	}
 
+	audio_ = audio;
+	bossBGM_ = audio_->SoundLoadFile("resources/Overload_Ratio.mp3");
+	explosionSound_ = audio_->SoundLoadFile("resources/crash.mp3");
+	missileSound_ = audio_->SoundLoadFile("resources/missile.mp3");
+	shockWaveSound_ = audio_->SoundLoadFile("resources/shockWave.mp3");
 
 }
 
@@ -238,6 +243,8 @@ void Boss::Update(Player* player) {
 					//}
 
 					OutputDebugStringA("BOSS LANDED!!!\n");
+
+					audio_->SoundPlayWave(explosionSound_, false);
 				}
 			}
 			// 2. 着地後、待機（タイマーを進める）
@@ -249,10 +256,14 @@ void Boss::Update(Player* player) {
 					isAppearing_ = false; // 登場状態を解除
 					attackTimer_ = 0;     // 攻撃タイマーを0からスタート！
 					OutputDebugStringA("BATTLE START!!!\n");
+
+					audio_->SoundPlayWave(bossBGM_, true);
 				}
 			}
 		}
 	}
+
+
 
 
 
@@ -346,6 +357,8 @@ void Boss::Update(Player* player) {
 				float spreadX = (offsetX * 0.1f); // 外側に広がる力
 				missileVelocity_[i] = { spreadX, 0.4f, -0.1f };
 			}
+
+			audio_->SoundPlayWave(missileSound_, false);
 		}
 
 		//時差ミサイルにする場合
@@ -422,6 +435,8 @@ void Boss::Update(Player* player) {
 		if (attackTimer_ == 450) {
 			isExplosionActive_ = true;
 			explosionScale_ = { 0.1f, 0.1f, 0.1f };
+
+			audio_->SoundPlayWave(explosionSound_, false);
 		}
 
 		if (isExplosionActive_) {
@@ -621,6 +636,8 @@ void Boss::Update(Player* player) {
 			} else if (phase_ == 2) {
 				shockwaveScale_ = { 0.1f, 1.0f, 0.1f };  // 第2形態：小さな「真円」からスタート！
 			}
+
+			audio_->SoundPlayWave(shockWaveSound_, false);
 		}
 	}
 	
@@ -877,5 +894,10 @@ Boss::~Boss() {
 			spheres_[i] = nullptr;
 		}
 	}
+
+	audio_->SoundUnload(&bossBGM_);
+	audio_->SoundUnload(&explosionSound_);
+	audio_->SoundUnload(&missileSound_);
+	audio_->SoundUnload(&shockWaveSound_);
 }
 

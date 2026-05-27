@@ -5,7 +5,7 @@
 using namespace std;
 using namespace MathFunction;
 
-void Player::Initialize(Object3dCommon* object3dCommon) {
+void Player::Initialize(Object3dCommon* object3dCommon, Audio* audio) {
 	// 引数で受け取ってメンバ変数に記録する
 	object3dCommon_ = object3dCommon;
 
@@ -36,6 +36,9 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	// ゲーム開始前に、カーソルを強制的に画面の中央にセットしておく
 	SetCursorPos(centerX, centerY);
 
+	audio_ = audio;
+	shootSound_ = audio_->SoundLoadFile("resources/normalShot.mp3");
+	bigShootSound_ = audio_->SoundLoadFile("resources/bigShot.mp3");
 
 }
 
@@ -257,6 +260,11 @@ void Player::Update(Input* input) {
 			if (isChargeCompleted_) {
 				isChargeCompleted_ = false;
 				object3d_->SetModel("player.obj");
+
+				audio_->SoundPlayWave(bigShootSound_, false);
+			}
+			else {
+				audio_->SoundPlayWave(shootSound_, false);
 			}
 		}
 	}
@@ -601,4 +609,7 @@ Player::~Player() {
 		delete p;
 	}
 	chargeParticles_.clear();
+
+	audio_->SoundUnload(&shootSound_);
+	audio_->SoundUnload(&bigShootSound_);
 }

@@ -134,6 +134,7 @@
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="GameClearScene.cpp" />
+    <ClCompile Include="engine\audio\Audio.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractSceneFactory.h" />
@@ -170,6 +171,8 @@
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="GameClearScene.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="engine\audio\Audio.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\Object3d.hlsli" />

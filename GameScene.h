@@ -2,6 +2,7 @@
 #include "Boss.h" 
 #include "BaseScene.h"
 #include "Skydome.h"
+#include "Audio.h"
 
 // 既存のエンジンのクラス
 class Player;
@@ -35,6 +36,8 @@ private:
     Camera* camera_ = nullptr;
 
     SceneManager* sceneManager_ = nullptr;
+
+    Audio* audio_ = nullptr;
 
     int cameraReturnTimer_ = 0;       // 戻るためのタイマー
     const int kReturnDuration = 60;   // 60フレーム（1秒）かけて戻る
