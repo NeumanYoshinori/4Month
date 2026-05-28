@@ -38,6 +38,8 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 
 	SetCursorPos(centerX, centerY);
 
+	ShowCursor(FALSE);
+
 	// 画像の読み込み（パスは実際の配置場所に合わせて変更してください）
 	std::string reticlePath = "resources/reticle.png";
 	TextureManager::GetInstance()->LoadTexture(reticlePath);
