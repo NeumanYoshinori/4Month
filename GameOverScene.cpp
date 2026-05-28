@@ -21,7 +21,7 @@ void GameOverScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     gameOverSprite_->SetPosition({ 0.0f, 0.0f });
 }
 
-void GameOverScene::Update(Player* player) {
+void GameOverScene::Update() {
     if (gameOverSprite_) {
         gameOverSprite_->Update();
     }

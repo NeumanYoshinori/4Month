@@ -21,7 +21,7 @@ private:
 public:
 	void Initialize(Object3dCommon* object3dCommon, Camera* camera, SpriteCommon* spriteCommon);
 	void ChangeScene(const std::string& sceneName);
-	void Update(Player* player);
+	void Update();
 	void Draw();
 	static SceneManager* GetInstance();
 	void Finalize();

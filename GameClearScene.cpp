@@ -21,7 +21,7 @@ void GameClearScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) 
     clearSprite_->SetPosition({ 0.0f, 0.0f });
 }
 
-void GameClearScene::Update(Player* player) {
+void GameClearScene::Update() {
     if (clearSprite_) {
         clearSprite_->Update();
     }

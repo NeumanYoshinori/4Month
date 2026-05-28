@@ -19,7 +19,7 @@ void SceneManager::Initialize(Object3dCommon* object3dCommon, Camera* camera, Sp
 	spriteCommon_ = spriteCommon;
 }
 
-void SceneManager::Update(Player* player)
+void SceneManager::Update()
 {
     if (nextScene_) {
         if (scene_) {
@@ -51,7 +51,7 @@ void SceneManager::Update(Player* player)
     }
 
     if (scene_) {
-        scene_->Update(player);
+        scene_->Update();
     }
 }
 

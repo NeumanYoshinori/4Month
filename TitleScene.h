@@ -12,7 +12,7 @@ class SpriteCommon;
 class TitleScene : public BaseScene {
 public:
     void Initialize(Object3dCommon* object3dCommon, Camera* camera) override;
-    void Update(Player* player) override;
+    void Update() override;
     void Draw() override;
     void Finalize() override;
     ~TitleScene();

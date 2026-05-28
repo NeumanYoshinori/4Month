@@ -26,7 +26,7 @@ void TitleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 }
 
 // 2. 更新：毎フレーム呼ばれる（計算や入力チェック）
-void TitleScene::Update(Player* player) {
+void TitleScene::Update() {
     // スプライトの更新
     if (titleSprite_) {
         titleSprite_->Update();

@@ -13,7 +13,7 @@ class Camera;
 class GameScene :public BaseScene {
 public:
 	void Initialize(Object3dCommon* object3dCommon, Camera* camera)override;
-	void Update(Player* player)override;
+	void Update()override;
 	void Draw()override;
 	void Finalize() override;
 
@@ -36,6 +36,9 @@ private:
     Camera* camera_ = nullptr;
 
     SceneManager* sceneManager_ = nullptr;
+
+    // プレイヤーのインスタンス
+    Player* player_ = nullptr;
 
     Audio* audio_ = nullptr;
     Audio::SoundData shotHit_;

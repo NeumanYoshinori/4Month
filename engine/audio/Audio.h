@@ -40,6 +40,8 @@ public:
 		WAVEFORMATEX wfex;
 		// バッファ
 		std::vector<BYTE> buffer;
+		// ソースボイス
+		IXAudio2SourceVoice* pSourceVoice;
 	};
 
 	// シングルトンインスタンスの取得
@@ -58,10 +60,13 @@ public:
 	void SoundUnload(SoundData* soundData);
 
 	// 音声再生
-	void SoundPlayWave(const SoundData& soundData, bool loop);
+	void SoundPlayWave(SoundData soundData, bool loop);
+
+	// 音声一時停止
+	void SoundPauseWave(const SoundData& soundData);
 
 	//音声停止
-   /*void SoundStopWave(const SoundData& soundData);*/
+    void SoundStopWave(const SoundData& soundData);
 
    // 音声が流れているか
 	bool IsSoundPlaying(const SoundData& soundData);

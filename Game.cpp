@@ -84,14 +84,6 @@ void Game::Initialize()
 	audio_ = Audio::GetInstance();
 	audio_->Initialize();
 
-	// player
-	player_ = new Player();
-	player_->Initialize(object3dCommon_, audio_);
-	// playerにモデルを紐づける
-	player_->SetModel("player.obj");
-	// playerにカメラを紐づける
-	player_->SetCamera(camera_);
-
 	// ==========================================
 	// GameScene（ボスと背景の管理者）を作る
 	// ==========================================
@@ -154,7 +146,7 @@ void Game::Update()
 
 	// シーンマネージャの更新処理
 	if (sceneManager_) {
-		sceneManager_->Update(player_);
+		sceneManager_->Update();
 	}
 
 	// Windowsのメッセージ処理
@@ -172,7 +164,6 @@ void Game::Update()
 	//ImGui::ShowDemoWindow();
 
 	// キー入力の更新
-	player_->Update(input_);
 	// 0キーを押したときコンソールにHit 0と表示する
 	if (input_->ReleaseKey(DIK_0)) {
 		OutputDebugStringA("Hit 0\n");
@@ -256,8 +247,6 @@ void Game::Draw()
 		//object3d[i]->Draw();
 	}
 
-	player_->Draw();
-
 	//particleManager->Draw();
 	// 3Dオブジェクトの描画
 	//field->Draw();
@@ -288,7 +277,6 @@ void Game::Finalize()
 	delete spriteCommon_;
 	delete object3dCommon_;
 	delete camera_;
-	delete player_;
 
 	audio_->Finalize();
 }

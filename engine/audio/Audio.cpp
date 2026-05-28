@@ -33,6 +33,8 @@ void Audio::Initialize() {
 
 	// マスターボイスを生成
 	result = xAudio2->CreateMasteringVoice(&masterVoice);
+
+	OutputDebugStringA("Audio Finalize\n");
 }
 
 Audio::SoundData Audio::SoundLoadFile(const string& filename) {
@@ -102,12 +104,11 @@ void Audio::SoundUnload(SoundData* soundData) {
 	soundData->wfex = {};
 }
 
-void Audio::SoundPlayWave(const SoundData& soundData, bool loop) {
+void Audio::SoundPlayWave(SoundData soundData, bool loop) {
 	HRESULT result;
 
 	// 波形フォーマットを基にSourceVoiceの生成
-	IXAudio2SourceVoice* pSourceVoice = nullptr;
-	result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
+	result = xAudio2->CreateSourceVoice(&soundData.pSourceVoice, &soundData.wfex);
 	assert(SUCCEEDED(result));
 
 	// 再生する波形データの設定
@@ -123,20 +124,23 @@ void Audio::SoundPlayWave(const SoundData& soundData, bool loop) {
 	}
 
 	// 波形データの再生
-	result = pSourceVoice->SubmitSourceBuffer(&buf);
-	result = pSourceVoice->Start();
+	result = soundData.pSourceVoice->SubmitSourceBuffer(&buf);
+	result = soundData.pSourceVoice->Start();
+}
+
+void Audio::SoundPauseWave(const SoundData& soundData) {
+	soundData.pSourceVoice->Stop();
+}
+
+void Audio::SoundStopWave(const SoundData& soundData) {
+	// 波形データの停止と解放
+	soundData.pSourceVoice->Stop();
+	soundData.pSourceVoice->DestroyVoice();
 }
 
 bool Audio::IsSoundPlaying(const SoundData& soundData) {
-	HRESULT result;
-
-	// 波形フォーマットを基にSourceVoiceの生成
-	IXAudio2SourceVoice* pSourceVoice = nullptr;
-	result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
-	assert(SUCCEEDED(result));
-
 	XAUDIO2_VOICE_STATE state{};
-	pSourceVoice->GetState(&state);
+	soundData.pSourceVoice->GetState(&state);
 
 	return state.BuffersQueued > 0;
 }
@@ -151,6 +155,6 @@ void Audio::Finalize() {
 	// XAudio2解放
 	xAudio2.Reset();
 
-	delete instance;
-	instance = nullptr;
+	/*delete instance;
+	instance = nullptr;*/
 }
