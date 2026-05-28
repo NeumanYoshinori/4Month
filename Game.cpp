@@ -291,6 +291,4 @@ void Game::Finalize()
 	delete player_;
 
 	audio_->Finalize();
-	delete audio_;
-	audio_ = nullptr;
 }

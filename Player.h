@@ -198,5 +198,7 @@ private:
 	Audio* audio_ = nullptr;
 	Audio::SoundData shootSound_;
 	Audio::SoundData bigShootSound_;
+	Audio::SoundData punchHit_;
+	Audio::SoundData shotHit_;
 
 };

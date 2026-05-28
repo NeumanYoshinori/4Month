@@ -53,6 +53,8 @@ public:
         if (hp_ > 0 && !isTransitioning_ && !isDead_ && !isDying_) {
             hp_ -= 1;
 
+            audio_->SoundPlayWave(shotHit_, false);
+
             if (hp_ <= 0) {
                 // ⬇️第1形態のHPが0になった時の処理！
                 if (phase_ == 1) {
@@ -271,6 +273,8 @@ private:
     Audio::SoundData explosionSound_;
     Audio::SoundData missileSound_;
     Audio::SoundData shockWaveSound_;
+    Audio::SoundData punchSound_;
+    Audio::SoundData shotHit_;
 
 
 };

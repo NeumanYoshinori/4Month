@@ -38,6 +38,7 @@ private:
     SceneManager* sceneManager_ = nullptr;
 
     Audio* audio_ = nullptr;
+    Audio::SoundData shotHit_;
 
     int cameraReturnTimer_ = 0;       // 戻るためのタイマー
     const int kReturnDuration = 60;   // 60フレーム（1秒）かけて戻る

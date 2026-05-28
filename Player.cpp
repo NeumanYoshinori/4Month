@@ -37,8 +37,9 @@ void Player::Initialize(Object3dCommon* object3dCommon, Audio* audio) {
 	SetCursorPos(centerX, centerY);
 
 	audio_ = audio;
-	shootSound_ = audio_->SoundLoadFile("resources/normalShot.mp3");
-	bigShootSound_ = audio_->SoundLoadFile("resources/bigShot.mp3");
+	shootSound_ = audio_->SoundLoadFile("resources/sound/normalShot.mp3");
+	bigShootSound_ = audio_->SoundLoadFile("resources/sound/bigShot.mp3");
+	punchHit_ = audio_->SoundLoadFile("resources/sound/playerHit.mp3");
 
 }
 
@@ -504,6 +505,8 @@ void Player::OnDamage() {
 
 	OutputDebugStringA("Player Took Damage!!!\n");
 
+	audio_->SoundPlayWave(punchHit_, false);
+
 	// HPが0になったら死亡！
 	if (hp_ <= 0) {
 		hp_ = 0;
@@ -612,4 +615,5 @@ Player::~Player() {
 
 	audio_->SoundUnload(&shootSound_);
 	audio_->SoundUnload(&bigShootSound_);
+	audio_->SoundUnload(&punchHit_);
 }

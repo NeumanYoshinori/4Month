@@ -126,10 +126,11 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera, Audio* aud
 	}
 
 	audio_ = audio;
-	bossBGM_ = audio_->SoundLoadFile("resources/Overload_Ratio.mp3");
-	explosionSound_ = audio_->SoundLoadFile("resources/crash.mp3");
-	missileSound_ = audio_->SoundLoadFile("resources/missile.mp3");
-	shockWaveSound_ = audio_->SoundLoadFile("resources/shockWave.mp3");
+	bossBGM_ = audio_->SoundLoadFile("resources/sound/Overload_Ratio.mp3");
+	explosionSound_ = audio_->SoundLoadFile("resources/sound/Explosion08-2(Short).mp3");
+	missileSound_ = audio_->SoundLoadFile("resources/sound/sen_ge_misairu02.mp3");
+	punchSound_ = audio_->SoundLoadFile("resources/sound/rocketPunch.mp3");
+	shotHit_ = audio_->SoundLoadFile("resources/sound/robotHit.mp3");
 
 }
 
@@ -257,7 +258,7 @@ void Boss::Update(Player* player) {
 					attackTimer_ = 0;     // 攻撃タイマーを0からスタート！
 					OutputDebugStringA("BATTLE START!!!\n");
 
-					audio_->SoundPlayWave(bossBGM_, true);
+					//audio_->SoundPlayWave(bossBGM_, true);
 				}
 			}
 		}
@@ -302,6 +303,7 @@ void Boss::Update(Player* player) {
 		// 左腕パンチ
 		if (attackTimer_ == 60 && leftPunchState_ == PunchState::kIdle) {
 			leftPunchState_ = PunchState::kPunch;
+			audio_->SoundPlayWave(punchSound_, false);
 			if (player) {
 				Vector3 pPos = player->GetTranslate();
 				Vector3 targetPos = { pPos.x, pPos.y, pPos.z };
@@ -316,6 +318,7 @@ void Boss::Update(Player* player) {
 		// 右腕パンチ
 		if (attackTimer_ == 120 && rightPunchState_ == PunchState::kIdle) {
 			rightPunchState_ = PunchState::kPunch;
+			audio_->SoundPlayWave(punchSound_, false);
 			if (player) {
 				Vector3 pPos = player->GetTranslate();
 				Vector3 targetPos = { pPos.x, pPos.y, pPos.z };
@@ -637,7 +640,7 @@ void Boss::Update(Player* player) {
 				shockwaveScale_ = { 0.1f, 1.0f, 0.1f };  // 第2形態：小さな「真円」からスタート！
 			}
 
-			audio_->SoundPlayWave(shockWaveSound_, false);
+			audio_->SoundPlayWave(explosionSound_, false);
 		}
 	}
 	
@@ -899,5 +902,7 @@ Boss::~Boss() {
 	audio_->SoundUnload(&explosionSound_);
 	audio_->SoundUnload(&missileSound_);
 	audio_->SoundUnload(&shockWaveSound_);
+	audio_->SoundUnload(&punchSound_);
+	audio_->SoundUnload(&shotHit_);
 }
 
