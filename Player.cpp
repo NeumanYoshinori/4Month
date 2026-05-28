@@ -349,6 +349,9 @@ void Player::Update(Input* input) {
 		float baseDistance = 18.0f; // プレイヤーからカメラまでの基本距離（デフォルト15.0fから拡大）
 		float heightOffset = 2.2f;   // 注視点（カメラが見る中心）の高さ（デフォルト1.5fから少し高めに）
 
+		float defaultDistance = 15.0f; // 本来離れたい理想の距離
+		//float cameraDistance = defaultDistance;
+
 		// 注視点をプレイヤーの少し上に設定（自機の足元ではなく、胸〜頭あたりを基準にする）
 		Vector3 targetPos = transform.translate;
 		targetPos.y += heightOffset;

@@ -81,6 +81,9 @@ void Game::Initialize()
 	ModelManager::GetInstance()->LoadModel("3DGameover.obj");
 	ModelManager::GetInstance()->LoadModel("3DClear.obj");
 
+	std::string reticlePath = "resources/reticle.png";
+	TextureManager::GetInstance()->LoadTexture(reticlePath);
+
 	// 3Dオブジェクト共通部の初期化
 	object3dCommon_ = new Object3dCommon();
 	object3dCommon_->Initialize(dxBase_);
