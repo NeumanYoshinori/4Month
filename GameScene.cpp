@@ -22,6 +22,9 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     ModelManager::GetInstance()->LoadModel("missile.obj");    // 第2形態ミサイル
     ModelManager::GetInstance()->LoadModel("explosion.obj");  // 爆発
     ModelManager::GetInstance()->LoadModel("gravity.obj");    // 重力ゾーン
+    ModelManager::GetInstance()->LoadModel("wall.obj");
+
+ 
 
     //ModelManager::GetInstance()->LoadModel("player.obj");
 
@@ -50,7 +53,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     // ==========================================
     // 壁の初期化
     // ==========================================
-    ModelManager::GetInstance()->LoadModel("wall.obj");
+    
 
     wall_ = new Object3d();
     wall_->Initialize(object3dCommon_);

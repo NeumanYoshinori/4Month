@@ -48,6 +48,39 @@ void Game::Initialize()
 	// 3Dモデルマネージャの初期化
 	modelManager_->Initialize(dxBase_);
 
+	modelManager_->LoadModel("3DTitle.obj");
+	modelManager_->LoadModel("SkyDome.obj");
+	modelManager_->LoadModel("3DRule.obj");
+	modelManager_->LoadModel("3DEnter.obj");
+
+
+	ModelManager::GetInstance()->LoadModel("player.obj");
+	ModelManager::GetInstance()->LoadModel("player_red.obj");
+	ModelManager::GetInstance()->LoadModel("bullet.obj");
+
+	ModelManager::GetInstance()->LoadModel("field.obj");
+	ModelManager::GetInstance()->LoadModel("skydome.obj");    // スカイドーム用
+	ModelManager::GetInstance()->LoadModel("boss.obj");       // ボス本体用
+	ModelManager::GetInstance()->LoadModel("alphaBossLeftArm.obj");  // 左腕
+	ModelManager::GetInstance()->LoadModel("alphaBossRightArm.obj"); // 右腕
+	ModelManager::GetInstance()->LoadModel("shockwave.obj");  // 衝撃波
+	ModelManager::GetInstance()->LoadModel("missile.obj");    // 第2形態ミサイル
+	ModelManager::GetInstance()->LoadModel("explosion.obj");  // 爆発
+	ModelManager::GetInstance()->LoadModel("gravity.obj");    // 重力ゾーン
+	ModelManager::GetInstance()->LoadModel("wall.obj");
+
+	//ModelManager::GetInstance()->LoadModel("boss.obj");
+	ModelManager::GetInstance()->LoadModel("LeftArm.obj");
+	ModelManager::GetInstance()->LoadModel("RightArm.obj");
+	//ModelManager::GetInstance()->LoadModel("shockwave.obj");
+	//ModelManager::GetInstance()->LoadModel("missile.obj");
+	//ModelManager::GetInstance()->LoadModel("explosion.obj");
+	//ModelManager::GetInstance()->LoadModel("gravity.obj");
+
+
+	ModelManager::GetInstance()->LoadModel("3DGameover.obj");
+	ModelManager::GetInstance()->LoadModel("3DClear.obj");
+
 	// 3Dオブジェクト共通部の初期化
 	object3dCommon_ = new Object3dCommon();
 	object3dCommon_->Initialize(dxBase_);
