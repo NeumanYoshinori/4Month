@@ -23,7 +23,7 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     ModelManager::GetInstance()->LoadModel("explosion.obj");  // 爆発
     ModelManager::GetInstance()->LoadModel("gravity.obj");    // 重力ゾーン
     ModelManager::GetInstance()->LoadModel("wall.obj");
-
+    //textureManager_->LoadTexture("resources/hpBar.png");
  
 
     //ModelManager::GetInstance()->LoadModel("player.obj");
@@ -69,6 +69,14 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     if (boss_) {
         boss_->Initialize(object3dCommon_, camera);
     }
+
+
+
+    // HPバーの初期化
+    hpBarSprite_ = new Sprite();
+    hpBarSprite_->Initialize(spriteCommon_, "resources/hpBar.png");
+    // 画面の左上あたりに配置
+    hpBarSprite_->SetPosition({ 50.0f, 50.0f });
 
     skydome_ = new Skydome();
     skydome_->Initialize(object3dCommon_, camera_);
@@ -487,6 +495,20 @@ void GameScene::Update(Player* dummy) {
         }
     }
 
+    if (hpBarSprite_ && player_) {
+        // HPの割合を計算 (0.0f ～ 1.0f)
+        // ※整数同士の割り算にならないよう (float) でキャストするのがポイント！
+        float hpRatio = (float)player_->GetHp() / (float)player_->GetMaxHp();
+
+        // HPが0未満にならないように制限
+        if (hpRatio < 0.0f) hpRatio = 0.0f;
+
+        // 横幅を割合に合わせて縮める（元の長さを300pxとする）
+        hpBarSprite_->SetSize({ 300.0f * hpRatio, 30.0f });
+
+        hpBarSprite_->Update();
+    }
+
 } // <- GameScene::Update 関数の終わりのカッコ
 
 void GameScene::Draw() {
@@ -511,6 +533,10 @@ void GameScene::Draw() {
     if (boss_) {
         boss_->Draw();
     }
+
+    if (hpBarSprite_) {
+        hpBarSprite_->Draw();
+    }
 }
 
 void GameScene::Finalize()
@@ -533,4 +559,7 @@ GameScene::~GameScene() {
 
     delete wall_;
     wall_ = nullptr;
+
+    delete hpBarSprite_;
+    hpBarSprite_ = nullptr;
 }

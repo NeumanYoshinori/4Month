@@ -57,6 +57,9 @@ void Game::Initialize()
 	ModelManager::GetInstance()->LoadModel("player.obj");
 	ModelManager::GetInstance()->LoadModel("player_red.obj");
 	ModelManager::GetInstance()->LoadModel("bullet.obj");
+	
+	textureManager_->LoadTexture("resources/hpBar.png"); 
+
 
 	ModelManager::GetInstance()->LoadModel("field.obj");
 	ModelManager::GetInstance()->LoadModel("skydome.obj");    // スカイドーム用

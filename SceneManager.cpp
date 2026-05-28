@@ -5,6 +5,7 @@
 #include "GameOverScene.h"  // 追加
 #include "Rule.h"
 #include <cassert>
+#include "GameScene.h"
 
 // インスタンスの実体を取得
 SceneManager* SceneManager::GetInstance()
@@ -35,6 +36,11 @@ void SceneManager::Update(Player* player)
         TitleScene* titleScene = dynamic_cast<TitleScene*>(scene_);
         if (titleScene) {
             titleScene->SetSpriteCommon(spriteCommon_);
+        }
+
+        GameScene* gameScene = dynamic_cast<GameScene*>(scene_);
+        if (gameScene) {
+            gameScene->SetSpriteCommon(spriteCommon_);
         }
 
         // ゲームクリアシーンへの受け渡しを追加

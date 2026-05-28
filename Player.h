@@ -111,6 +111,9 @@ public: // メンバ関数
 	void SetIsDead(bool isDead) { isDead_ = isDead; }
 	void SetInvincibilityTimer(int timer) { invincibilityTimer_ = timer; }
 
+	int GetHp() const { return hp_; }          // 現在のHP
+	int GetMaxHp() const { return maxHp_; }
+
 private:
 	// 座標変換行列データ作成
 	void CreateTransformationMatrixData();
@@ -163,6 +166,7 @@ private:
 	bool isCharging_ = false;   // チャージ中かどうか
 
 	int hp_ = 10;
+	int maxHp_ = 10;
 	bool isInvincible_ = false;
 	int invincibleTimer_ = 0;
 	bool isDead_ = false; // プレイヤー自身の死亡フラグ
