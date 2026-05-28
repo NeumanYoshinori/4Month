@@ -69,13 +69,10 @@ void Game::Initialize()
 	ModelManager::GetInstance()->LoadModel("gravity.obj");    // 重力ゾーン
 	ModelManager::GetInstance()->LoadModel("wall.obj");
 
-	//ModelManager::GetInstance()->LoadModel("boss.obj");
+
 	ModelManager::GetInstance()->LoadModel("LeftArm.obj");
 	ModelManager::GetInstance()->LoadModel("RightArm.obj");
-	//ModelManager::GetInstance()->LoadModel("shockwave.obj");
-	//ModelManager::GetInstance()->LoadModel("missile.obj");
-	//ModelManager::GetInstance()->LoadModel("explosion.obj");
-	//ModelManager::GetInstance()->LoadModel("gravity.obj");
+
 
 
 	ModelManager::GetInstance()->LoadModel("3DGameover.obj");

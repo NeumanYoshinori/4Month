@@ -32,6 +32,7 @@ private:
     // 3Dモデル用
     Object3d* titleTextObject_ = nullptr;
     Skydome* skydome_ = nullptr;
+    Object3d* EnterTextObject_ = nullptr;
 
     Object3dCommon* object3dCommon_ = nullptr;
     Camera* camera_ = nullptr;

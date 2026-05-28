@@ -17,6 +17,7 @@ void TitleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     //モデル読み込み
     ModelManager::GetInstance()->LoadModel("3DTitle.obj");
     ModelManager::GetInstance()->LoadModel("SkyDome.obj");
+    ModelManager::GetInstance()->LoadModel("3DEnter.obj");
 
 
     skydome_ = new Skydome();
@@ -33,6 +34,15 @@ void TitleScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     titleTextObject_->SetTranslate({ 0.5f, 0.0f, 0.0f });
     titleTextObject_->SetScale({ 2.0f, 2.0f, 2.0f });
     titleTextObject_->SetRotate({ 0.0f, 0.0f, 0.0f });
+
+
+    EnterTextObject_ = new Object3d();
+    EnterTextObject_->Initialize(object3dCommon_);
+    EnterTextObject_->SetModel("3DEnter.obj");
+    EnterTextObject_->SetCamera(camera_);
+
+    EnterTextObject_->SetTranslate({ 0.0f,-5.0f, 25.0f });
+    EnterTextObject_->SetScale({ 1.0f, 1.0f, 1.0f });
 
     // タイトル用のカメラ位置に調整（必要なら）
     camera_->SetTranslate({ 0.0f, 1.5f, -20.0f });
@@ -69,6 +79,8 @@ void TitleScene::Update(Player* player) {
 
     titleTextObject_->Update();
     
+    EnterTextObject_->Update();
+
     //// スプライトの更新
     //if (titleSprite_) {
     //    titleSprite_->Update();
@@ -92,7 +104,10 @@ void TitleScene::Draw() {
         titleTextObject_->Draw();
     }
     
-    
+    if (EnterTextObject_) {
+        EnterTextObject_->Draw();
+    }
+
     // タイトル画像を描画
    /* if (titleSprite_) {
         titleSprite_->Draw();
@@ -107,6 +122,9 @@ void TitleScene::Finalize() {
     delete skydome_;
     skydome_ = nullptr;
     
+    delete EnterTextObject_;
+    EnterTextObject_ = nullptr;
+
     
     /* if (titleSprite_) {
         delete titleSprite_;

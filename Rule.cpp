@@ -89,7 +89,7 @@ void RuleScene::Draw() {
 
     if (skydome_) skydome_->Draw();
     if (RuleTextObject_) RuleTextObject_->Draw();
-    if (EnterTextObject_) EnterTextObject_->Draw();
+   // if (EnterTextObject_) EnterTextObject_->Draw();
 
 }
 
