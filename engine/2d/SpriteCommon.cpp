@@ -4,6 +4,11 @@
 using namespace Microsoft::WRL;
 using namespace Logger;
 
+SpriteCommon* SpriteCommon::GetInstance() {
+	static SpriteCommon instance;
+	return &instance;
+}
+
 void SpriteCommon::Initialize(DirectXBase* dxBase) {
 	// 引数で受け取ってメンバ変数に記録する
 	dxBase_ = dxBase;

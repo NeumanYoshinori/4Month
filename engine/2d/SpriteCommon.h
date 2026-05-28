@@ -6,6 +6,9 @@
 // スプライト共通部
 class SpriteCommon {
 public: // メンバ関数
+
+	static SpriteCommon* GetInstance();
+
 	// 初期化
 	void Initialize(DirectXBase* dxBase);
 
