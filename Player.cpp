@@ -1,6 +1,8 @@
 #include "Player.h"
 #include "Object3dCommon.h"
 #include "Input.h"
+#include "TextureManager.h"
+#include "SpriteCommon.h"
 
 using namespace std;
 using namespace MathFunction;
@@ -14,6 +16,7 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 	ModelManager::GetInstance()->LoadModel("bullet.obj");
 
 	ModelManager::GetInstance()->LoadModel("player.obj");
+	ModelManager::GetInstance()->LoadModel("player_red.obj"); // 赤い自機のモデルを用意してください
 
 	object3d_ = new Object3d();
 	object3d_->Initialize(object3dCommon_);
@@ -32,8 +35,28 @@ void Player::Initialize(Object3dCommon* object3dCommon) {
 
 	int centerX = 1280 / 2;
 	int centerY = 720 / 2;
-	// ゲーム開始前に、カーソルを強制的に画面の中央にセットしておく
+
 	SetCursorPos(centerX, centerY);
+
+	// 画像の読み込み（パスは実際の配置場所に合わせて変更してください）
+	std::string reticlePath = "resources/reticle.png";
+	TextureManager::GetInstance()->LoadTexture(reticlePath);
+
+	reticleSprite_ = new Sprite();
+	reticleSprite_->Initialize(SpriteCommon::GetInstance(), "resources/reticle.png");
+
+	// 画像の本来のサイズを取得
+	Vector2 originalSize = reticleSprite_->GetSize();
+	float scale = 0.05f;
+	reticleSprite_->SetSize({ originalSize.x * scale, originalSize.y * scale });
+
+	// スケール適用後の「半分のサイズ」を計算
+	float reticleHalfWidth = (originalSize.x * scale) / 2.0f;
+	float reticleHalfHeight = (originalSize.y * scale) / 2.0f;
+
+	// 画面中央から半分のサイズを引くことで、画像の中心が画面中央に一致する
+	reticleSprite_->SetPosition({ static_cast<float>(centerX) - reticleHalfWidth, static_cast<float>(centerY) - reticleHalfHeight });
+
 }
 
 void Player::Update(Input* input) {
@@ -59,7 +82,7 @@ void Player::Update(Input* input) {
 		GetCursorPos(&currentMousePos);
 
 		// 画面の中心座標
-	
+
 		int centerX = 1280 / 2;
 		int centerY = 720 / 2;
 
@@ -79,14 +102,14 @@ void Player::Update(Input* input) {
 		cameraAngleX += deltaY * sensitivity;
 
 		// 【上下の制限】（カメラが真上・真下を通り過ぎて裏返らないようにする）
-		float maxPitch = 1.2f;  // 見下ろし限界
-		float minPitch = -1.0f; // 見上げ限界
+		float maxPitch = 1.0f;  // 見下ろし限界
+		float minPitch = -0.4f; // 見上げ限界
 		if (cameraAngleX > maxPitch) { cameraAngleX = maxPitch; }
 		if (cameraAngleX < minPitch) { cameraAngleX = minPitch; }
 	}
 
 	// ==========================================
-	// 2. プレイヤーの移動（WASDによるストレイフ移動）
+	// 2. プレイヤーの移動
 	// ==========================================
 	if (input) {
 		float speed = currentSpeed_;
@@ -95,30 +118,80 @@ void Player::Update(Input* input) {
 		Vector3 forward = { std::sin(transform.rotate.y), 0.0f, std::cos(transform.rotate.y) };
 		Vector3 right = { std::cos(transform.rotate.y), 0.0f, -std::sin(transform.rotate.y) };
 
-		// W・Sキーで正面・後ろへ移動
-		if (input->PushKey(DIK_W)) {
-			transform.translate.x += forward.x * speed;
-			transform.translate.z += forward.z * speed;
+		// --- スライドのクールダウン更新 ---
+		if (slideCooldownTimer_ > 0) {
+			slideCooldownTimer_--;
 		}
-		if (input->PushKey(DIK_S)) {
-			transform.translate.x -= forward.x * speed;
-			transform.translate.z -= forward.z * speed;
+
+		// 【変更】isGrounded の条件を外し、空中でもスライドできるようにしました
+		if (!isGrounded && !isSliding_ && slideCooldownTimer_ <= 0 && input->TriggerKey(DIK_SPACE)) {
+
+			// 入力されているキーの方向を計算
+			Vector3 inputDir = { 0.0f, 0.0f, 0.0f };
+			bool hasDirectionInput = false; // 【追加】方向キーが押されているかのフラグ
+
+			if (input->PushKey(DIK_W)) { inputDir.x += forward.x; inputDir.z += forward.z; hasDirectionInput = true; }
+			if (input->PushKey(DIK_S)) { inputDir.x -= forward.x; inputDir.z -= forward.z; hasDirectionInput = true; }
+			if (input->PushKey(DIK_A)) { inputDir.x -= right.x; inputDir.z -= right.z; hasDirectionInput = true; }
+			if (input->PushKey(DIK_D)) { inputDir.x += right.x; inputDir.z += right.z; hasDirectionInput = true; }
+
+			// 【変更】方向キーが入力されている時だけスライドを発動する
+			if (hasDirectionInput) {
+				// 斜め入力時に速くなりすぎないようベクトルを正規化（長さを1にする）
+				float len = std::sqrt(inputDir.x * inputDir.x + inputDir.z * inputDir.z);
+				if (len > 0.0f) {
+					inputDir.x /= len;
+					inputDir.z /= len;
+				}
+
+				// スライド状態に突入
+				slideDirection_ = inputDir;
+				isSliding_ = true;
+				slideTimer_ = SLIDE_DURATION;
+
+				// 空中スライド時に落下速度をリセットして、滞空するようにするなら以下を有効にする
+				// velocityY = 0.0f; 
+			}
 		}
-		// A・Dキーで左・右へカニ歩き（ストレイフ）移動
-		if (input->PushKey(DIK_A)) {
-			transform.translate.x -= right.x * speed;
-			transform.translate.z -= right.z * speed;
+
+		// --- 実際の移動処理 ---
+		if (isSliding_) {
+			// スライド中の高速移動（通常の入力は無視される）
+			transform.translate.x += slideDirection_.x * slideSpeed_;
+			transform.translate.z += slideDirection_.z * slideSpeed_;
+
+			slideTimer_--;
+			if (slideTimer_ <= 0) {
+				isSliding_ = false; // スライド終了
+				slideCooldownTimer_ = SLIDE_COOLDOWN; // クールダウン開始
+			}
 		}
-		if (input->PushKey(DIK_D)) {
-			transform.translate.x += right.x * speed;
-			transform.translate.z += right.z * speed;
+		else {
+			// 通常の移動（スライドしていない時だけWASDで動ける）
+			if (input->PushKey(DIK_W)) {
+				transform.translate.x += forward.x * speed;
+				transform.translate.z += forward.z * speed;
+			}
+			if (input->PushKey(DIK_S)) {
+				transform.translate.x -= forward.x * speed;
+				transform.translate.z -= forward.z * speed;
+			}
+			if (input->PushKey(DIK_A)) {
+				transform.translate.x -= right.x * speed;
+				transform.translate.z -= right.z * speed;
+			}
+			if (input->PushKey(DIK_D)) {
+				transform.translate.x += right.x * speed;
+				transform.translate.z += right.z * speed;
+			}
 		}
 
 		// 重力を加算して落下させる
-		velocityY -= gravity;
+		if (!isSliding_) { velocityY -= gravity; }
+		//velocityY -= gravity;
 
 		// スペースキーが押された瞬間 ＆ 地面にいる時だけジャンプ！
-		if (input->TriggerKey(DIK_SPACE) && isGrounded) {
+		if (input->TriggerKey(DIK_SPACE) && isGrounded && !isSliding_) { // スライド中はジャンプ不可にする
 			velocityY = jumpSpeed;
 			isGrounded = false; // 空中判定にする
 		}
@@ -126,8 +199,7 @@ void Player::Update(Input* input) {
 		// Y座標に速度（落下・ジャンプ）を足し込む
 		transform.translate.y += velocityY;
 
-		// 簡易的な地面との当たり判定 (Y=0.0f を地面とする場合)
-		// ※もしレイキャストやAABBの処理を既に作っていた場合は、ここをそちらに差し替えてください
+		// 簡易的な地面との当たり判定
 		float groundHeight = 0.0f;
 
 		if (transform.translate.y <= groundHeight) {
@@ -137,30 +209,78 @@ void Player::Update(Input* input) {
 			velocityY = 0.0f;
 			// 地面についたフラグをON
 			isGrounded = true;
-		} else {
+		}
+		else {
 			// 地面より上にいるなら空中
 			isGrounded = false;
 		}
 	}
 
-	// ==========================================
-	// 弾の発射処理
-	// ==========================================
-	// 左クリックが押されているかチェック (0x8000 で押下状態を判定)
-	if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState('M') & 0x8000)) {
-		isCharging_ = true;
-		chargeTimer_++;
-	} else {
-		// 左クリックを離した瞬間
-		if (isCharging_) {
-			// 180フレーム（約3秒）以上溜めていたらチャージショット！
-			FireBullet(chargeTimer_ >= 180);
-			isCharging_ = false;
-			chargeTimer_ = 0;
+	// 1. 無敵時間のカウントダウン
+	if (isInvincible_) {
+		invincibleTimer_--;
+		if (invincibleTimer_ <= 0) {
+			isInvincible_ = false;
 		}
 	}
 
+	// 2. 死亡判定
+	if (hp_ <= 0) {
+		isDead_ = true;
+		// 必要に応じてここで「死亡アニメーション」などを再生
+		OutputDebugStringA("PLAYER DEAD\n");
+		return;
+	}
+
+	if (isDead_) return;
+
+	// ==========================================
+	// 弾の発射とチャージ処理
+	// ==========================================
+	// 左クリックを押している間
+	if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState('M') & 0x8000)) {
+		isCharging_ = true;
+		chargeTimer_++;
+
+		if (chargeTimer_ >= 180) {
+			// まだモデルを切り替えていなければ、赤いモデルに変更する
+			if (!isChargeCompleted_) {
+				isChargeCompleted_ = true;
+				object3d_->SetModel("player_red.obj");
+			}
+		}
+
+		// 20フレーム以上、かつ「チャージ完了前」の時だけパーティクルを出す
+		if (chargeTimer_ > 20 && !isChargeCompleted_) {
+			// 3フレームに1回パーティクル生成
+			if (chargeTimer_ % 3 == 0) {
+				Vector3 center = transform.translate;
+				center.y += 1.0f;
+				SpawnChargeParticle(center);
+			}
+		}
+
+	}
+	else {
+		// 左クリックを離した瞬間
+		if (isCharging_) {
+			FireBullet(isChargeCompleted_);
+
+			// リセット処理
+			isCharging_ = false;
+			chargeTimer_ = 0;
+
+			if (isChargeCompleted_) {
+				isChargeCompleted_ = false;
+				object3d_->SetModel("player.obj");
+			}
+		}
+	}
+
+	// ==========================================
 	// 弾の更新（移動と寿命管理）
+	// ==========================================
+
 	for (auto it = bullets_.begin(); it != bullets_.end(); ) {
 		Bullet* b = *it;
 		b->lifeTimer--;
@@ -184,30 +304,38 @@ void Player::Update(Input* input) {
 
 		++it;
 	}
+
+	UpdateChargeParticles();
+
 	// ==========================================
-	
-	// ==========================================
-	// 3. カメラの配置（プレイヤーを中央に捉える）
+	// 3. カメラの配置（真後ろのまま視野を広くする）
 	// ==========================================
 	if (camera_ && !isCinematic_) {
-		float cameraDistance = 15.0f;
+		// --- 💡 カメラの距離と高さの調整パラメータ ---
+		float baseDistance = 18.0f; // プレイヤーからカメラまでの基本距離（デフォルト15.0fから拡大）
+		float heightOffset = 2.2f;   // 注視点（カメラが見る中心）の高さ（デフォルト1.5fから少し高めに）
 
-		// 注視点をプレイヤーの中央（頭の高さなど）に設定する
+		// 注視点をプレイヤーの少し上に設定（自機の足元ではなく、胸〜頭あたりを基準にする）
 		Vector3 targetPos = transform.translate;
-		targetPos.y += 1.5f;
+		targetPos.y += heightOffset;
 
-		// 球座標系の計算を使って、プレイヤーの後ろにカメラを配置する
+		// プレイヤーの上下の首振り角度（cameraAngleX）に応じて、距離を少しだけ自動調整する（お好みで）
+		// これを入れると、真下を見下ろしたときにカメラが自機に近づき、地形に埋まりにくくなります
+		float cameraDistance = baseDistance * std::cos(cameraAngleX * 0.2f);
+
+		// 球座標系の計算を使って、プレイヤーの真後ろにカメラを配置
 		Vector3 cameraPos;
 		cameraPos.x = targetPos.x - std::sin(transform.rotate.y) * std::cos(cameraAngleX) * cameraDistance;
 		cameraPos.y = targetPos.y + std::sin(cameraAngleX) * cameraDistance;
 		cameraPos.z = targetPos.z - std::cos(transform.rotate.y) * std::cos(cameraAngleX) * cameraDistance;
 
-		// 地面を Y=0.0f とした場合、カメラの最低高度を 1.0f に制限する
-		if (cameraPos.y < 1.0f) {
-			cameraPos.y = 1.0f;
+		// 【重要】カメラが地面（Y=0.0f）に潜り込まないようにする制限
+		// カメラ自体の高さが低くなりすぎないよう、最低高度を 1.5f に設定
+		if (cameraPos.y < 1.5f) {
+			cameraPos.y = 1.5f;
 		}
 
-		// カメラに位置と角度をセット
+		// カメラに最終的な位置と角度をセット
 		camera_->SetTranslate(cameraPos);
 		camera_->SetRotate({ cameraAngleX, transform.rotate.y, 0.0f });
 	}
@@ -240,23 +368,47 @@ void Player::Update(Input* input) {
 	//transformationMatrixData->WVP = worldViewProjectionMatrix;
 	//transformationMatrixData->World = worldMatrix;
 
+	if (reticleSprite_ && !isDead_&& !isCinematic_) {
+		reticleSprite_->Update();
+	}
+
 	currentSpeed_ = 0.1f;
 }
 
 void Player::Draw() {
-	// ★ 修正：死んでいない時だけ自機を描画する！
-	if (!isDead_) {
-		// 無敵時間中はチカチカ点滅させる（4フレームごとに表示/非表示を切り替え）
-		if (invincibilityTimer_ == 0 || invincibilityTimer_ % 4 >= 2) {
-			if (object3d_) {
-				object3d_->Draw();
-			}
+	//// コマンドリストを作成
+	//commandList = dxBase_->GetCommandList();
+
+	//// wvp用のCBufferの場所を設定
+	//commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	//// 平行光源CBufferの場所を設定
+	//commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+
+// 無敵タイマー(invincibilityTimer_)が 0 より大きい時、点滅させる
+	// 4フレームに1回非表示にする（チカチカさせる）
+	if (invincibilityTimer_ > 0) {
+		if (invincibilityTimer_ % 8 < 4) {
+			// ここでreturnすることで、このフレームはモデルを描画しない＝消えて見える
+			return;
 		}
 	}
+	// 3Dモデルが割り当てられていれば描画する
+	if (object3d_) {
+		object3d_->Draw();
+	}
+
 
 	// 弾は、自機が死んでいても画面に残って飛んでいくように別で描画
 	for (Bullet* b : bullets_) {
 		b->object3d->Draw();
+	}
+
+	for (ChargeParticle* p : chargeParticles_) {
+		p->object3d->Draw();
+	}
+
+	if (reticleSprite_ && !isDead_ && !isCinematic_) {
+		reticleSprite_->Draw();
 	}
 }
 
@@ -296,15 +448,13 @@ void Player::CreateDirectionalLight() {
 // 弾を生成して発射する関数
 // ==========================================
 void Player::FireBullet(bool isCharged) {
-	
 	Bullet* newBullet = new Bullet();
 	newBullet->object3d = new Object3d();
 	newBullet->object3d->Initialize(object3dCommon_);
 	newBullet->object3d->SetModel("bullet.obj");
 	newBullet->object3d->SetCamera(camera_);
 
-	
-	// 発射位置
+	// 発射位置（プレイヤーの胸元付近）
 	newBullet->position = transform.translate;
 	newBullet->position.y += 1.0f;
 
@@ -317,19 +467,20 @@ void Player::FireBullet(bool isCharged) {
 	cameraDir.z = std::cos(yaw) * std::cos(pitch);
 
 	// ==========================================
-	// 画面の奥に向かって撃つ！
+	// 画面の奥（レティクルの指す先）に向かって撃つ！
 	// ==========================================
 	// 1. カメラの現在位置を取得
 	Vector3 cameraPos = camera_->GetTranslate();
 
-	// 2. 画面のど真ん中、ずっと奥（50先）にある「目標点」を計算する
+	// 2. ターゲットの距離を十分に遠くする（例: 300.0f）
+	// これにより、カメラとプレイヤーの位置ズレ（視差）を吸収し、レティクルの位置へ綺麗に弾が飛びます
 	float targetDistance = 50.0f;
 	Vector3 targetPoint;
 	targetPoint.x = cameraPos.x + (cameraDir.x * targetDistance);
 	targetPoint.y = cameraPos.y + (cameraDir.y * targetDistance);
 	targetPoint.z = cameraPos.z + (cameraDir.z * targetDistance);
 
-	// 3. プレイヤーの胸（newBullet->position）から、目標点へ向かうベクトルを作る
+	// 3. プレイヤーの発射位置から、遠くの目標点へ向かうベクトルを作る
 	Vector3 realShootDir;
 	realShootDir.x = targetPoint.x - newBullet->position.x;
 	realShootDir.y = targetPoint.y - newBullet->position.y;
@@ -348,10 +499,11 @@ void Player::FireBullet(bool isCharged) {
 		// チャージショット（巨大！）
 		float speed = 1.0f;
 		newBullet->radius = 3.0f;
-		newBullet->lifeTimer = 120;
+		newBullet->lifeTimer = 40;
 		newBullet->object3d->SetScale({ 1.5f, 1.5f, 1.5f });
 		newBullet->velocity = { realShootDir.x * speed, realShootDir.y * speed, realShootDir.z * speed };
-	} else {
+	}
+	else {
 		// 通常ショット
 		float speed = 0.8f;
 		newBullet->radius = 0.5f;
@@ -362,7 +514,6 @@ void Player::FireBullet(bool isCharged) {
 
 	bullets_.push_back(newBullet);
 }
-
 
 // ==========================================
 // 自機がダメージを受けた時の処理
@@ -386,6 +537,80 @@ void Player::OnDamage() {
 
 
 // ==========================================
+// チャージパーティクルを生成する関数
+// ==========================================
+void Player::SpawnChargeParticle(const Vector3& center) {
+	ChargeParticle* p = new ChargeParticle();
+	p->object3d = new Object3d();
+	p->object3d->Initialize(object3dCommon_);
+	p->object3d->SetModel("cube.obj"); // 既存のcubeモデルを流用
+
+	//// 中心からランダムな方向・距離に発生させる
+	//float angle = (rand() % 360) * 3.141592f / 180.0f;
+	//float height = ((rand() % 200) - 100) / 100.0f; // -1.0f ~ 1.0f
+	//float radius = 3.0f + ((rand() % 20) / 10.0f);  // 3.0f ~ 5.0f の距離
+	float spread = 0.5f;
+	float offsetX = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * spread; // -2.0 〜 2.0
+	float offsetY = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * spread;
+	float offsetZ = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * spread;
+
+	/*p->startPos.x = center.x + std::cos(angle) * radius;
+	p->startPos.y = center.y + height * radius;
+	p->startPos.z = center.z + std::sin(angle) * radius;*/
+
+	p->startPos.x = center.x + offsetX;
+	p->startPos.y = center.y + offsetY;
+	p->startPos.z = center.z + offsetZ;
+
+	p->position = p->startPos;
+	p->progress = 0.0f;
+
+	// スピードも少しランダムにしてバラつきを出す
+	p->speed = 0.02f + ((rand() % 15) / 1000.0f); // 0.02 ~ 0.035
+
+	chargeParticles_.push_back(p);
+}
+
+// ==========================================
+// チャージパーティクルの更新（中心に引き寄せる）
+// ==========================================
+void Player::UpdateChargeParticles() {
+	// 吸い込まれる中心点（常に最新のプレイヤー位置を追従させる）
+	Vector3 center = transform.translate;
+	center.y += 1.0f;
+
+	for (auto it = chargeParticles_.begin(); it != chargeParticles_.end(); ) {
+		ChargeParticle* p = *it;
+		p->progress += p->speed;
+
+		// 進行度が1.0（中心に到達）を超えたか、チャージが中断されたら削除
+		if (p->progress >= 1.0f || !isCharging_) {
+			delete p->object3d;
+			delete p;
+			it = chargeParticles_.erase(it);
+			continue;
+		}
+
+		// 線形補間(Lerp)で現在地を計算：スタート地点から中心地点へ徐々に移動
+		p->position.x = p->startPos.x + (center.x - p->startPos.x) * p->progress;
+		p->position.y = p->startPos.y + (center.y - p->startPos.y) * p->progress;
+		p->position.z = p->startPos.z + (center.z - p->startPos.z) * p->progress;
+
+		// 演出：中心に近づくほど小さくする (0.3f から 0.0f へ)
+		float scale = 0.05f * (1.0f - p->progress);
+
+		// チャージ時間が長いほど全体を大きく・激しくしたい場合は chargeTimer_ を掛ける応用も可能です
+
+		p->object3d->SetScale({ scale, scale, scale });
+		p->object3d->SetTranslate(p->position);
+		p->object3d->SetCamera(camera_);
+		p->object3d->Update();
+
+		++it;
+	}
+}
+
+// ==========================================
 // デストラクタｖ
 // ==========================================
 Player::~Player() {
@@ -399,4 +624,17 @@ Player::~Player() {
 		delete b;
 	}
 	bullets_.clear();
+
+	// ==== Player::~Player() (デストラクタ) 内に追加 ====
+
+	for (ChargeParticle* p : chargeParticles_) {
+		delete p->object3d;
+		delete p;
+	}
+	chargeParticles_.clear();
+
+	if (reticleSprite_) {
+		delete reticleSprite_;
+		reticleSprite_ = nullptr;
+	}
 }

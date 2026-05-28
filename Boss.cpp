@@ -25,21 +25,21 @@ void Boss::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 	// ==========================================, ,
 	// 2. 左腕（Left Arm）の準備
 	// ==========================================
-	ModelManager::GetInstance()->LoadModel("alphaBossLeftArm.obj");
+	ModelManager::GetInstance()->LoadModel("LeftArm.obj");
 
 	objectLeftArm_ = new Object3d();
 	objectLeftArm_->Initialize(object3dCommon);
-	objectLeftArm_->SetModel("alphaBossLeftArm.obj");
+	objectLeftArm_->SetModel("LeftArm.obj");
 
 
 	// ==========================================
 	// 3. 右腕（Right Arm）の準備
 	// ==========================================
-	ModelManager::GetInstance()->LoadModel("alphaBossRightArm.obj");
+	ModelManager::GetInstance()->LoadModel("RightArm.obj");
 
 	objectRightArm_ = new Object3d();
 	objectRightArm_->Initialize(object3dCommon);
-	objectRightArm_->SetModel("alphaBossRightArm.obj");
+	objectRightArm_->SetModel("RightArm.obj");
 
 
 	// ==========================================
@@ -278,6 +278,7 @@ void Boss::Update(Player* player) {
 			OutputDebugStringA("BOSS PHASE 2 START!!!\n");
 		}
 	}
+
 	// ==========================================
 	// ② 第1形態の動き（今までの自機狙いロケットパンチ）
 	// ==========================================
@@ -606,6 +607,14 @@ void Boss::Update(Player* player) {
 			// 地面に埋もれないように 0.5f 浮かせた位置からスタート
 			shockwavePos_ = { bossPos_.x, 0.5f, bossPos_.z };
 
+			// 🌟 飛ぶ向きと画像の回転を、着地した瞬間のボスの向きに合わせる！
+			shockwaveRotate_ = bossRotate_;
+			float waveSpeed = 0.4f; // 衝撃波の飛ぶスピード
+			// サインとコサインを使って、向いている方向へのベクトルを作る
+			shockwaveVelocity_.x = std::sin(bossRotate_.y) * waveSpeed;
+			shockwaveVelocity_.y = 0.0f;
+			shockwaveVelocity_.z = std::cos(bossRotate_.y) * waveSpeed;
+
 			// 形態によって「最初の形」を分ける！
 			if (phase_ == 1) {
 				shockwaveScale_ = { 20.0f, 1.0f, 2.0f }; // 第1形態：今まで通りの横長
@@ -618,12 +627,18 @@ void Boss::Update(Player* player) {
 	if (isShockwaveActive_) {
 		if (phase_ == 1) {
 			// ==========================================
-			// 第1形態：奥へ進む直線衝撃波
+			// 第1形態：ボスの向いていた方向へ進む直線衝撃波
 			// ==========================================
-			shockwavePos_.z -= 0.1f; // 進むスピード
-			if (shockwavePos_.z < -20.0f) {
+			// 🌟 XとZ両方にスピードを足して斜めにも進めるようにする
+			shockwavePos_.x += shockwaveVelocity_.x;
+			shockwavePos_.z += shockwaveVelocity_.z;
+
+			// 飛んだ距離を測って、40.0f以上離れたら画面外として消す
+			float dx = shockwavePos_.x - bossPos_.x;
+			float dz = shockwavePos_.z - bossPos_.z;
+			if (std::sqrt(dx * dx + dz * dz) > 40.0f) {
 				isShockwaveActive_ = false;
-				isReturningToCenter_ = true; // 第1形態は終わったらすぐ戻る
+				isReturningToCenter_ = true;
 			}
 		} else if (phase_ == 2) {
 			// ==========================================
@@ -648,7 +663,7 @@ void Boss::Update(Player* player) {
 
 		shockwave_->SetTranslate(shockwavePos_);
 		shockwave_->SetScale(shockwaveScale_);
-		shockwave_->SetRotate({ 0.0f, 0.0f, 0.0f });
+		shockwave_->SetRotate(shockwaveRotate_);
 		shockwave_->Update();
 	}
 

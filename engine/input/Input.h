@@ -16,6 +16,8 @@ public:
 	// namespace省略
 	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
+	static Input* GetInstance();
+
 	// キーを押したかをチェック
 	bool PushKey(BYTE keyNumber);
 	// キーが押されていないかチェック

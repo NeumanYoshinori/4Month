@@ -2,6 +2,8 @@
 #include "ModelManager.h"
 #include "Player.h"
 #include <cmath>
+#include "SceneManager.h"
+#include "Input.h"
 
 // 引数を受け取るように変更
 void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
@@ -10,10 +12,28 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
 
     camera_ = camera;
 
+    ModelManager::GetInstance()->LoadModel("player.obj");
+    ModelManager::GetInstance()->LoadModel("field.obj");
+    ModelManager::GetInstance()->LoadModel("skydome.obj");    // スカイドーム用
+    ModelManager::GetInstance()->LoadModel("boss.obj");       // ボス本体用
+    ModelManager::GetInstance()->LoadModel("alphaBossLeftArm.obj");  // 左腕
+    ModelManager::GetInstance()->LoadModel("alphaBossRightArm.obj"); // 右腕
+    ModelManager::GetInstance()->LoadModel("shockwave.obj");  // 衝撃波
+    ModelManager::GetInstance()->LoadModel("missile.obj");    // 第2形態ミサイル
+    ModelManager::GetInstance()->LoadModel("explosion.obj");  // 爆発
+    ModelManager::GetInstance()->LoadModel("gravity.obj");    // 重力ゾーン
+
+    //ModelManager::GetInstance()->LoadModel("player.obj");
+
+    player_ = new Player();
+    player_->Initialize(object3dCommon_);
+    player_->SetModel("player.obj");
+    player_->SetCamera(camera_);
+
     // ==========================================
     // フィールドの初期化
     // ==========================================
-    ModelManager::GetInstance()->LoadModel("field.obj");
+    //ModelManager::GetInstance()->LoadModel("field.obj");
 
     field_ = new Object3d();
     field_->Initialize(object3dCommon_);
@@ -36,9 +56,44 @@ void GameScene::Initialize(Object3dCommon* object3dCommon, Camera* camera) {
     skydome_ = new Skydome();
     skydome_->Initialize(object3dCommon_, camera_);
 
+    sceneManager_ = SceneManager::GetInstance();
+
 }
 
-void GameScene::Update(Player* player) {
+void GameScene::Update(Player* dummy) {
+
+    if (boss_->isAppearing_ && player_->IsDead()) {
+        player_->SetHP(10);
+        player_->SetIsDead(false);
+        player_->SetInvincibilityTimer(0);
+        OutputDebugStringA("Player Reset for New Game!\n");
+
+        boss_->hp_ = 30;           // HPを満タンに
+        boss_->isDead_ = false;    // 死亡フラグを解除
+     
+
+    }
+
+    if (player_->IsDead()) {
+        
+        sceneManager_->ChangeScene("GAMEOVER");
+        return;
+    }
+
+    if (boss_->IsDead()) {
+        sceneManager_->ChangeScene("GAMECLEAR");
+        return;
+    }
+
+    if (Input::GetInstance()->TriggerKey(DIK_1)) {
+
+        SceneManager::GetInstance()->ChangeScene("GAMEOVER");
+    }
+
+    if (Input::GetInstance()->TriggerKey(DIK_2)) {
+
+        SceneManager::GetInstance()->ChangeScene("GAMECLEAR");
+    }
 
     skydome_->Update(camera_);
 
@@ -68,12 +123,16 @@ void GameScene::Update(Player* player) {
         field_->Update();
     }
 
-    // 3. ボスの更新処理（移動や攻撃ロジック）を呼ぶ
-    if (boss_) {
-        boss_->Update(player);
+    if (player_) {
+        player_->Update(Input::GetInstance());
     }
 
-    if (player && boss_) {
+    // 3. ボスの更新処理（移動や攻撃ロジック）を呼ぶ
+    if (boss_) {
+        boss_->Update(player_);
+    }
+
+    if (player_ && boss_) {
 
         // =======================================================
         // 登場中（isAppearing_）でも、やられ中（IsDying）でもない時だけ判定！
@@ -81,21 +140,36 @@ void GameScene::Update(Player* player) {
         if (!boss_->isAppearing_ && !boss_->IsDying() && !boss_->IsTransitioning()) {
 
             if (boss_->IsShockwaveActive()) {
-                Vector3 pPos = player->GetTranslate();
+                Vector3 pPos = player_->GetTranslate();
                 Vector3 wavePos = boss_->GetShockwavePos();
                 Vector3 waveScale = boss_->GetShockwaveScale();
 
                 if (boss_->GetPhase() == 1) {
                     // ==========================================
-                    // 第1形態：直線の箱型判定
+                    // 第1形態：斜めに飛ぶ波の正確な判定（内積を使用）
                     // ==========================================
-                    float diffZ = std::abs(pPos.z - wavePos.z);
-                    bool isHitZ = (diffZ < waveScale.z);
-                    bool isHitY = (pPos.y < waveScale.y);
+                    Vector3 waveVel = boss_->GetShockwaveVelocity();
 
-                    if (isHitZ && isHitY) {
-                        OutputDebugStringA("Hit Shockwave (Phase 1)!!!\n");
-                        player->OnDamage();
+                    // 波の進行方向ベクトルを長さを1にして取り出す
+                    float speed = std::sqrt(waveVel.x * waveVel.x + waveVel.z * waveVel.z);
+                    if (speed > 0.0f) {
+                        Vector3 dir = { waveVel.x / speed, 0.0f, waveVel.z / speed };
+
+                        // 波の中心から自機へのベクトル
+                        float vX = pPos.x - wavePos.x;
+                        float vZ = pPos.z - wavePos.z;
+
+                        // 🌟 ここがポイント：内積（Dot）で「波の厚み方向」の距離だけを抽出する
+                        float diffDist = std::abs(vX * dir.x + vZ * dir.z);
+
+                        // 波の厚み(waveScale.z)より近くて、高さ(waveScale.y)より低ければヒット
+                        bool isHitDist = (diffDist < waveScale.z);
+                        bool isHitY = (pPos.y < waveScale.y);
+
+                        if (isHitDist && isHitY) {
+                            OutputDebugStringA("Hit Shockwave (Phase 1)!!!\n");
+                            player_->OnDamage();
+                        }
                     }
                 } else if (boss_->GetPhase() == 2) {
                     // ==========================================
@@ -109,7 +183,7 @@ void GameScene::Update(Player* player) {
                     // pPos.y < 2.0f は、プレイヤーがジャンプして避けた場合は当たらないようにする処理
                     if (std::abs(dist - waveScale.x) < 0.8f && pPos.y < 1.0f) {
                         OutputDebugStringA("Hit Shockwave (Phase 2 Ring)!!!\n");
-                        player->OnDamage();
+                        player_->OnDamage();
                     }
                 }
             }
@@ -118,15 +192,15 @@ void GameScene::Update(Player* player) {
             // 当たり判定（ロケットパンチ左腕 vs プレイヤー）
             // ==========================================
             if (boss_->IsLeftPunching()) {
-                Vector3 pPos = player->GetTranslate();
+                Vector3 pPos = player_->GetTranslate();
                 Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
                 Vector3 armPos = boss_->GetLeftArmPos();
                 float dx = pCenter.x - armPos.x; float dy = pCenter.y - armPos.y; float dz = pCenter.z - armPos.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                if (distance < 2.0f) {
+                if (distance < 1.5f) {
                     OutputDebugStringA("Hit Left Punch!!!\n");
-                    player->OnDamage();
+                    player_->OnDamage();
                 }
             }
 
@@ -134,15 +208,15 @@ void GameScene::Update(Player* player) {
             // 当たり判定（ロケットパンチ右腕 vs プレイヤー）
             // ==========================================
             if (boss_->IsRightPunching()) {
-                Vector3 pPos = player->GetTranslate();
+                Vector3 pPos = player_->GetTranslate();
                 Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
                 Vector3 armPos = boss_->GetRightArmPos();
                 float dx = pCenter.x - armPos.x; float dy = pCenter.y - armPos.y; float dz = pCenter.z - armPos.z;
                 float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                if (distance < 2.0f) {
+                if (distance < 1.5f) {
                     OutputDebugStringA("Hit Right Punch!!!\n");
-                    player->OnDamage();
+                    player_->OnDamage();
                 }
             }
 
@@ -151,7 +225,7 @@ void GameScene::Update(Player* player) {
             // ==========================================
             for (int i = 0; i < Boss::kMaxMissiles; i++) {
                 if (boss_->IsMissileActive(i)) {
-                    Vector3 pPos = player->GetTranslate();
+                    Vector3 pPos = player_->GetTranslate();
                     Vector3 pCenter = { pPos.x, pPos.y + 1.0f, pPos.z };
                     Vector3 mPos = boss_->GetMissilePos(i);
 
@@ -160,7 +234,7 @@ void GameScene::Update(Player* player) {
 
                     if (distance < 1.4f) {
                         OutputDebugStringA("Hit Missile!!!\n");
-                        player->OnDamage();
+                        player_->OnDamage();
                         boss_->DeactivateMissile(i);
                     }
                 }
@@ -170,7 +244,7 @@ void GameScene::Update(Player* player) {
             // 当たり判定（爆発範囲攻撃 vs プレイヤー）
             // ==========================================
             if (boss_->IsExplosionActive()) {
-                Vector3 pPos = player->GetTranslate();
+                Vector3 pPos = player_->GetTranslate();
                 Vector3 bPos = boss_->GetPos();
                 Vector3 expScale = boss_->GetExplosionScale();
 
@@ -179,14 +253,14 @@ void GameScene::Update(Player* player) {
 
                 if (distance < expScale.x) {
                     OutputDebugStringA("Hit Explosion!!! (AoE)\n");
-                    player->OnDamage();
+                    player_->OnDamage();
                 }
             }
 
             // ==========================================
             // 当たり判定（プレイヤーの弾 vs ボス）
             // ==========================================
-            const std::list<Player::Bullet*>& bullets = player->GetBullets();
+            const std::list<Player::Bullet*>& bullets = player_->GetBullets();
             for (Player::Bullet* b : bullets) {
                 if (b->isDead) { continue; }
 
@@ -238,7 +312,7 @@ void GameScene::Update(Player* player) {
             float playerSpeed = 0.1f; // 通常速度
             for (int i = 0; i < Boss::kMaxSpheres; i++) {
                 if (boss_->IsSphereActive(i)) {
-                    Vector3 pPos = player->GetTranslate();
+                    Vector3 pPos = player_->GetTranslate();
                     Vector3 sPos = boss_->GetSpherePos(i);
                     float dx = pPos.x - sPos.x;
                     float dz = pPos.z - sPos.z;
@@ -251,7 +325,7 @@ void GameScene::Update(Player* player) {
                 }
             }
        
-            player->SetSpeed(playerSpeed);
+            player_->SetSpeed(playerSpeed);
 
         } 
 
@@ -261,7 +335,7 @@ void GameScene::Update(Player* player) {
     // ==========================================
     // 映画的カメラ演出ディレクター
     // ==========================================
-    if (camera_ && boss_ && player) {
+    if (camera_ && boss_ && player_) {
 
         // 今現在、何らかの演出（登場・変身・死亡）が再生されているか
         bool isCurrentlyCinematic = (boss_->isAppearing_ || boss_->IsTransitioning() || boss_->IsDying());
@@ -270,7 +344,7 @@ void GameScene::Update(Player* player) {
         // A. 演出再生中（登場 / 形態変化 / 撃破）
         // ---------------------------------------------------
         if (isCurrentlyCinematic) {
-            player->SetCinematic(true); // プレイヤーのカメラ操作を無効化
+            player_->SetCinematic(true); // プレイヤーのカメラ操作を無効化
             wasCinematicLastFrame_ = true;
 
             Vector3 bPos = boss_->GetPos();
@@ -355,8 +429,8 @@ void GameScene::Update(Player* player) {
             t = t * t * (3.0f - 2.0f * t);
 
             // 目的地（自機カメラの本来の位置）を計算
-            Vector3 pPos = player->GetTranslate();
-            Vector3 pRot = player->GetRotate();
+            Vector3 pPos = player_->GetTranslate();
+            Vector3 pRot = player_->GetRotate();
             float dist = 15.0f;
             float angleX = 0.2f; // Player.cppの設定に合わせる
 
@@ -382,13 +456,13 @@ void GameScene::Update(Player* player) {
             camera_->SetRotate(currentRot);
 
             cameraReturnTimer_--;
-            player->SetCinematic(true); // 戻りきるまでは勝手に動かされないように固定
+            player_->SetCinematic(true); // 戻りきるまでは勝手に動かされないように固定
         }
         // ---------------------------------------------------
         // C. 通常プレイ（自由操作）
         // ---------------------------------------------------
         else {
-            player->SetCinematic(false);
+            player_->SetCinematic(false);
         }
     }
 
@@ -404,14 +478,25 @@ void GameScene::Draw() {
         field_->Draw();
     }
 
+    if (player_) {
+        player_->Draw();
+    }
+
     // 4. ボスの描画処理を呼ぶ
     if (boss_) {
         boss_->Draw();
     }
 }
 
+void GameScene::Finalize()
+{
+}
+
 // 忘れがちな後片付け
 GameScene::~GameScene() {
+    delete player_;
+    player_ = nullptr;
+
     delete boss_;
     boss_ = nullptr;
 
